@@ -39,7 +39,7 @@ public:
 
 private:
     void timerCallback() override;
-    void applyCurrentFormula();
+    bool applyCurrentFormula();
     void loadSelectedLibraryEntry();
     void refreshLibrary();
     void saveFormulaAs();
@@ -78,6 +78,10 @@ private:
     std::unique_ptr<juce::Component> macrosPanel_;
     std::unique_ptr<juce::Component> playPanel_;
     std::unique_ptr<juce::TabbedComponent> tabs_;
+
+    juce::ComboBox* engineCombo_ = nullptr;
+    juce::ComboBox* jsModeCombo_ = nullptr;
+    bool updatingCombos_ = false;
 
     int lastRevision_ = -1;
     bool suppressEdits_ = false;

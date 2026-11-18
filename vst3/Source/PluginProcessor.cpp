@@ -55,6 +55,16 @@ void BytebeatAudioProcessor::renderPreview(float* mono, int n)
     }
 
     auto s = makeSettings(44100.0);
+    if (engineMode_.load(std::memory_order_acquire) == kEngineJs)
+    {
+        s.program = nullptr;
+        s.evaluator = jsPreview_.get();
+    }
+    else
+    {
+        s.program = activeProgram_.load(std::memory_order_acquire);
+        s.evaluator = nullptr;
+    }
     s.playMode = bytebeat::kPlayFree;
     s.run = true;
     s.playing = true;
@@ -92,7 +102,17 @@ bytebeat::Settings BytebeatAudioProcessor::makeSettings(double sampleRate) const
 {
     bytebeat::Settings s;
 
-    s.program = activeProgram_.load(std::memory_order_acquire);
+    if (engineMode_.load(std::memory_order_acquire) == kEngineJs)
+    {
+        s.program = nullptr;
+        s.evaluator = jsAudioActive_.load(std::memory_order_acquire);
+    }
+    else
+    {
+        s.program = activeProgram_.load(std::memory_order_acquire);
+        s.evaluator = nullptr;
+    }
+
     s.outputMode = juce::jlimit(0, 2, (int)std::lround(plain(apvts_, bbvst::pid::mode)));
 
     const int clockIndex = juce::jlimit(0, bbvst::kNumClockRates - 1,
@@ -217,10 +237,99 @@ bool BytebeatAudioProcessor::applyFormula(const juce::String& source,
                                           const juce::String& name,
                                           juce::String& errorOut)
 {
+    return applyFormulaAs(source, name, engineMode_.load(std::memory_order_acquire),
+                          errorOut, true);
+}
+
+void BytebeatAudioProcessor::commitFormulaLocked(const juce::String& source,
+                                                 const juce::String& name)
+{
+    formulaSource_ = source;
+    formulaName_ = name.trim().isEmpty() ? juce::String("User Formula") : name.trim();
+    compileError_.clear();
+    compileErrorLine_ = 0;
+    compileErrorCol_ = 0;
+    formulaRevision_.fetch_add(1, std::memory_order_relaxed);
+}
+
+bool BytebeatAudioProcessor::compileJs(const juce::String& source, int jsMode,
+                                       std::unique_ptr<bbvst::JsEvaluator>& audio,
+                                       std::unique_ptr<bbvst::JsEvaluator>& preview,
+                                       std::string& errorOut) const
+{
+    std::string error;
+    auto a = bbvst::JsEvaluator::create(source.toStdString(), jsMode, 8, error);
+    if (!a)
+    {
+        errorOut = error;
+        return false;
+    }
+    auto p = bbvst::JsEvaluator::create(source.toStdString(), jsMode, 1, error);
+    if (!p)
+    {
+        errorOut = error;
+        return false;
+    }
+    audio = std::move(a);
+    preview = std::move(p);
+    return true;
+}
+
+bool BytebeatAudioProcessor::applyFormulaAs(const juce::String& source,
+                                            const juce::String& name,
+                                            int targetEngine,
+                                            juce::String& errorOut,
+                                            bool commit)
+{
     if (source.trim().isEmpty())
     {
         errorOut = "The formula is empty.";
         return false;
+    }
+
+    if (targetEngine == kEngineJs)
+    {
+        std::unique_ptr<bbvst::JsEvaluator> audio, preview;
+        std::string jsError;
+        if (!compileJs(source, jsMode_.load(std::memory_order_acquire), audio, preview, jsError))
+        {
+            std::lock_guard<std::mutex> lock(formulaMutex_);
+            compileErrorLine_ = 0;
+            compileErrorCol_ = 0;
+            compileError_ = "JS: " + juce::String(jsError);
+            errorOut = compileError_;
+            return false;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(formulaMutex_);
+            if (jsAudio_)
+            {
+                jsHistory_.push_back(std::move(jsAudio_));
+                if (jsHistory_.size() > 4)
+                    jsHistory_.erase(jsHistory_.begin());
+            }
+            jsAudio_ = std::move(audio);
+            jsPreview_ = std::move(preview);
+
+            if (commit)
+                commitFormulaLocked(source, name);
+            else
+            {
+                compileError_.clear();
+                compileErrorLine_ = 0;
+                compileErrorCol_ = 0;
+            }
+        }
+
+        activeProgramOps_.store(0, std::memory_order_relaxed);
+        jsAudioActive_.store(jsAudio_.get(), std::memory_order_release);
+        engineMode_.store(kEngineJs, std::memory_order_release);
+        if (commit)
+            currentProgram_.store(-1, std::memory_order_relaxed);
+        clearJsRuntimeError();
+        errorOut.clear();
+        return true;
     }
 
     bytebeat::FormulaMeta meta;
@@ -239,23 +348,77 @@ bool BytebeatAudioProcessor::applyFormula(const juce::String& source,
 
     auto* raw = result.program.get();
     const int ops = result.program->codeSize;
-
     {
         std::lock_guard<std::mutex> lock(formulaMutex_);
         programs_.push_back(std::move(result.program));
-        formulaSource_ = source;
-        formulaName_ = name.trim().isEmpty() ? juce::String("User Formula") : name.trim();
-        compileError_.clear();
-        compileErrorLine_ = 0;
-        compileErrorCol_ = 0;
+        if (commit)
+            commitFormulaLocked(source, name);
+        else
+        {
+            compileError_.clear();
+            compileErrorLine_ = 0;
+            compileErrorCol_ = 0;
+        }
     }
 
     activeProgramOps_.store(ops, std::memory_order_relaxed);
     activeProgram_.store(raw, std::memory_order_release);
-    formulaRevision_.fetch_add(1, std::memory_order_relaxed);
-    currentProgram_.store(-1, std::memory_order_relaxed);
+    engineMode_.store(kEngineNative, std::memory_order_release);
+    if (commit)
+        currentProgram_.store(-1, std::memory_order_relaxed);
     errorOut.clear();
     return true;
+}
+
+bool BytebeatAudioProcessor::setEngineMode(int mode, juce::String& errorOut)
+{
+    if (mode != kEngineNative && mode != kEngineJs)
+    {
+        errorOut = "Unknown engine.";
+        return false;
+    }
+    if (mode == getEngineMode())
+        return true;
+
+    const auto source = getFormulaSource();
+    if (source.trim().isEmpty())
+    {
+        errorOut = "No formula loaded.";
+        return false;
+    }
+    return applyFormulaAs(source, getFormulaName(), mode, errorOut, false);
+}
+
+bool BytebeatAudioProcessor::setJsMode(int mode, juce::String& errorOut)
+{
+    if (mode < 0 || mode > 2)
+    {
+        errorOut = "Unknown JavaScript mode.";
+        return false;
+    }
+
+    // This is a compile setting, not a live engine switch. The editor calls
+    // applyFormula() immediately afterwards so the current text is compiled
+    // with the new mode (and can be reverted if it fails).
+    jsMode_.store(mode, std::memory_order_release);
+    errorOut.clear();
+    return true;
+}
+
+bool BytebeatAudioProcessor::getJsRuntimeError() const
+{
+    if (auto* audio = jsAudioActive_.load(std::memory_order_acquire))
+        if (audio->runtimeError())
+            return true;
+    return jsPreview_ != nullptr && jsPreview_->runtimeError();
+}
+
+void BytebeatAudioProcessor::clearJsRuntimeError()
+{
+    if (auto* audio = jsAudioActive_.load(std::memory_order_acquire))
+        audio->clearRuntimeError();
+    if (jsPreview_)
+        jsPreview_->clearRuntimeError();
 }
 
 bool BytebeatAudioProcessor::loadLibraryEntry(const bbvst::LibraryEntry& entry,
@@ -350,7 +513,18 @@ void BytebeatAudioProcessor::setCurrentProgram(int index)
 
     juce::String err;
     if (applyFormula(p.source, p.name, err))
+    {
         currentProgram_.store(index, std::memory_order_relaxed);
+    }
+    else if (getEngineMode() == kEngineJs)
+    {
+        // Factory presets are native-dialect formulas. If one is not valid in
+        // the selected JS mode, load it with the native engine rather than
+        // leaving the program change silently ignored.
+        juce::String nativeError;
+        if (applyFormulaAs(p.source, p.name, kEngineNative, nativeError, true))
+            currentProgram_.store(index, std::memory_order_relaxed);
+    }
 }
 
 const juce::String BytebeatAudioProcessor::getProgramName(int index)
@@ -365,8 +539,10 @@ void BytebeatAudioProcessor::changeProgramName(int, const juce::String&) {}
 void BytebeatAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     juce::XmlElement xml("BytebeatState");
-    xml.setAttribute("version", 1);
+    xml.setAttribute("version", 2);
     xml.setAttribute("program", currentProgram_.load(std::memory_order_relaxed));
+    xml.setAttribute("engine", getEngineMode());
+    xml.setAttribute("jsmode", getJsMode());
 
     if (auto state = apvts_.copyState().createXml())
         xml.addChildElement(state.release());
@@ -410,10 +586,24 @@ void BytebeatAudioProcessor::setStateInformation(const void* data, int sizeInByt
         }
     }
 
+    const int savedEngine = xml->getIntAttribute("engine", kEngineNative);
+    const int savedJsMode = juce::jlimit(0, 2, xml->getIntAttribute("jsmode", 0));
+    jsMode_.store(savedJsMode, std::memory_order_release);
+
     if (source.isNotEmpty())
     {
         juce::String err;
-        applyFormula(source, name, err);
+        if (!applyFormulaAs(source, name,
+                            savedEngine == kEngineJs ? kEngineJs : kEngineNative,
+                            err, true))
+        {
+            if (savedEngine == kEngineJs)
+            {
+                // Open the project in Native mode rather than with no formula.
+                juce::String nativeError;
+                applyFormulaAs(source, name, kEngineNative, nativeError, true);
+            }
+        }
     }
 
     currentProgram_.store(xml->getIntAttribute("program", -1),

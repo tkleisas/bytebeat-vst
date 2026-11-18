@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(BytebeatMachineVST3 VERSION 0.1.0 LANGUAGES C CXX)
+project(BytebeatMachineVST3 VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +17,15 @@ if(NOT EXISTS "${BYTEBEAT_CORE}/BytebeatEngine.h")
 endif()
 
 add_subdirectory("${JUCE_DIR}" JUCE)
+
+# QuickJS powers the optional JavaScript engine. It is VST3-only: the MPC build
+# uses the allocation-free native bytecode VM.
+set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(QJS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_LIBC OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_STATIC OFF CACHE BOOL "" FORCE)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../third_party/quickjs-ng"
+                 "${CMAKE_BINARY_DIR}/quickjs" EXCLUDE_FROM_ALL)
 
 juce_add_plugin(BytebeatMachine
     COMPANY_NAME "bokontep"
@@ -39,6 +48,7 @@ juce_generate_juce_header(BytebeatMachine)
 target_sources(BytebeatMachine PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+    Source/BytebeatJsEngine.cpp
 )
 
 target_compile_definitions(BytebeatMachine PRIVATE
@@ -59,6 +69,7 @@ if(NOT MSVC)
 endif()
 
 target_link_libraries(BytebeatMachine PRIVATE
+    qjs
     juce::juce_audio_utils
     juce::juce_audio_processors
     juce::juce_dsp
@@ -66,3 +77,19 @@ target_link_libraries(BytebeatMachine PRIVATE
     juce::juce_recommended_config_flags
     juce::juce_recommended_warning_flags
 )
+
+enable_testing()
+add_executable(BytebeatJsTest
+    ../tests/js_engine_tests.cpp
+    Source/BytebeatJsEngine.cpp
+)
+target_include_directories(BytebeatJsTest PRIVATE
+    Source
+    "${BYTEBEAT_CORE}"
+)
+target_link_libraries(BytebeatJsTest PRIVATE qjs)
+target_compile_features(BytebeatJsTest PRIVATE cxx_std_17)
+if(NOT MSVC)
+    target_compile_options(BytebeatJsTest PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME BytebeatJsTest COMMAND BytebeatJsTest)

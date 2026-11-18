@@ -16,6 +16,7 @@
 
 #include "BytebeatCompile.h"
 #include "BytebeatEngine.h"
+#include "BytebeatJsEngine.h"
 #include "BytebeatParams.h"
 #include "FormulaLibraryModel.h"
 
@@ -59,6 +60,20 @@ public:
     bool applyFormula(const juce::String& source, const juce::String& name,
                       juce::String& errorOut);
     bool loadLibraryEntry(const bbvst::LibraryEntry& entry, juce::String& errorOut);
+
+    // ---- alternative JavaScript engine (VST3 only) ----------------------
+    enum EngineMode
+    {
+        kEngineNative = 0,
+        kEngineJs = 1
+    };
+
+    int getEngineMode() const { return engineMode_.load(std::memory_order_relaxed); }
+    int getJsMode() const { return jsMode_.load(std::memory_order_relaxed); }
+    bool setEngineMode(int mode, juce::String& errorOut);
+    bool setJsMode(int mode, juce::String& errorOut);
+    bool getJsRuntimeError() const;
+    void clearJsRuntimeError();
 
     juce::String getFormulaSource() const;
     juce::String getFormulaName() const;
@@ -106,6 +121,14 @@ private:
     bytebeat::Settings makeSettings(double sampleRate) const;
     void updateScope(const float* left, const float* right, int n, int clockRate);
 
+    bool applyFormulaAs(const juce::String& source, const juce::String& name,
+                        int targetEngine, juce::String& errorOut, bool commit);
+    bool compileJs(const juce::String& source, int jsMode,
+                   std::unique_ptr<bbvst::JsEvaluator>& audio,
+                   std::unique_ptr<bbvst::JsEvaluator>& preview,
+                   std::string& errorOut) const;
+    void commitFormulaLocked(const juce::String& source, const juce::String& name);
+
     juce::AudioProcessorValueTreeState apvts_;
 
     bytebeat::Engine engine_;
@@ -126,6 +149,15 @@ private:
     juce::String compileError_;
     int compileErrorLine_ = 0;
     int compileErrorCol_ = 0;
+
+    // JavaScript engine resources. These are message-thread only; the audio
+    // thread reads only jsAudioActive_.
+    std::atomic<int> engineMode_ { kEngineNative };
+    std::atomic<int> jsMode_ { 0 };
+    std::unique_ptr<bbvst::JsEvaluator> jsAudio_;
+    std::unique_ptr<bbvst::JsEvaluator> jsPreview_;
+    std::vector<std::unique_ptr<bbvst::JsEvaluator>> jsHistory_;
+    std::atomic<bbvst::JsEvaluator*> jsAudioActive_ { nullptr };
 
     std::vector<FactoryPreset> presets_;
     std::atomic<int> currentProgram_ { -1 };

@@ -7,7 +7,7 @@ $SdkCommit = if ($env:SDK_COMMIT) { $env:SDK_COMMIT } else { "a5949cf6fe2cbfb95b
 $Python = if ($env:PYTHON) { $env:PYTHON } else { "python" }
 $SdkDir = if ($env:SDK_DIR) { $env:SDK_DIR } else { Join-Path $Root ".sdk" }
 $PluginName = "Bytebeat Machine"
-$Version = "0.1.0"
+$Version = "0.2.0"
 
 function Invoke-Checked {
     param([string]$Exe, [string[]]$Arguments)
@@ -86,7 +86,9 @@ if (Test-Path $DistVst3) { Remove-Item -Recurse -Force $DistVst3 }
 Copy-Item -Recurse $Bundle $DistVst3
 Copy-Item (Join-Path $Root "LICENSE") (Join-Path $Root "dist")
 Copy-Item (Join-Path $Root "NOTICE.md") (Join-Path $Root "dist")
-Compress-Archive -Force -Path $DistVst3, (Join-Path $Root "LICENSE"), (Join-Path $Root "NOTICE.md") `
+Copy-Item (Join-Path $Root "LICENSES/QuickJS-NG-MIT.txt") (Join-Path $Root "dist")
+Compress-Archive -Force -Path $DistVst3, (Join-Path $Root "LICENSE"), (Join-Path $Root "NOTICE.md"), `
+    (Join-Path $Root "LICENSES/QuickJS-NG-MIT.txt") `
     -DestinationPath (Join-Path $Root "dist/bytebeat-machine-$Version-windows-vst3.zip")
 
 Write-Host ""

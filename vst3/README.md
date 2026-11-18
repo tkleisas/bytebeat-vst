@@ -42,8 +42,8 @@ The repository's `build.ps1` and `.github/workflows/build.yml` automate this.
   spectrum, `t`, clock rate and peak. It renders its own preview, so it works
   even in YAWN's process-isolated editor window.
 - **MACROS** — A–H, tone, drive, DC block, width, pan, volume.
-- **PLAY** — mode, clock, play mode, run, speed, smooth, voices, root, pitch
-  track, attack, release, reset-on-note.
+- **PLAY** — engine, JS mode, mode, clock, play mode, run, speed, smooth,
+  voices, root, pitch track, attack, release, reset-on-note.
 - **Top bar** — formula name, Apply, Auto, status, bytecode op count.
 
 The formula source is stored in the VST3 state (`<Formula>` in the state XML)
@@ -73,6 +73,28 @@ Parameter changes use the immediate parameter path. In an in-process host the
 editor and processor share an instance, so Apply is immediate. Project state
 includes the formula source.
 
+## JavaScript engine
+
+The **Engine** choice in the PLAY page selects the native bytecode VM or
+QuickJS-NG. **JS Mode** selects how the source is compiled:
+
+- **Expression** — an expression, e.g. `Math.sin(t/20)*100+128`.
+- **Function** — a function body with `return`, e.g.
+  `x = (typeof x === 'undefined' ? 0 : x) + 1; return x;`
+- **Script** — a script that returns a function, e.g.
+  `const f = t => Math.sin(t/20)*100+128; return f;`
+
+The arguments are
+`t, a..h, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice`.
+`Math` aliases and `PI`/`TAU`/`E` are installed. Undeclared variables persist
+per voice/context. The result may be a number or `[left, right]`. Changing the
+engine or JS mode applies the current editor text. The source is smoke-tested
+at `t=0`; runtime errors show `JS ERROR`. Ctrl+E toggles the engine and Ctrl+J
+cycles the JS mode.
+
+QuickJS is VST3-only and experimental: it can allocate/GC on the audio thread.
+The native engine is the default. The MPC build never includes QuickJS.
+
 ## Play mode
 
 The default is **Trigger** (MIDI notes start the formula). Switch to **Free**
@@ -90,5 +112,5 @@ the engine's menu values; `Mode` = Bytebeat/Signed/Floatbeat, `Clock` =
 
 SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 bokontep.
 
-JUCE 7.0.12 and the bundled VST3 SDK are used under GPLv3. “VST” is a
+JUCE 7.0.12 and the bundled VST3 SDK are used under GPLv3. QuickJS-NG is MIT. “VST” is a
 trademark of Steinberg Media Technologies GmbH. See `../NOTICE.md`.

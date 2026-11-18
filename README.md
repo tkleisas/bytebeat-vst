@@ -50,6 +50,8 @@ affiliated with or endorsed by them.
   final soft clip.
 - **Built-in formula bank** plus user `.bb` files. The VST3 editor saves
   `.bb` files to a per-user folder and lists everything in that folder.
+- **Optional JavaScript engine** in the VST3, powered by QuickJS-NG. The MPC
+  keeps the allocation-free native VM.
 - **Project state** contains the formula source, not just a bank index, so a
   saved project opens correctly even if the library changes.
 - **MPC**: JSON skins, Q-Link pages, factory programs, and native ARM32/ARM64
@@ -86,7 +88,7 @@ Requires **MPC OS 3.10.1 or later** with **External Plugin Support** enabled:
 **Preferences → Enhancements (Beta)** → *Enable Enhancements* and *External
 Plugin Support*, then restart the MPC app.
 
-1. Take `bytebeat-machine-0.1.0-mpc.zip` from the release (or build it) and
+1. Take `bytebeat-machine-0.2.0-mpc.zip` from the release (or build it) and
    unzip it.
 2. Copy the whole `bokontep - VST - Bytebeat Machine` folder into a folder
    named exactly `VST2 Plugins` at the root of a USB drive, SD card, or the
@@ -279,6 +281,51 @@ The MPC loader and the VST3 `.bb` files understand these leading comments:
 | `// a: ...` … `// h: ...` | Labels for the macro knobs in the VST3 editor. |
 | `// author: ...` | Free text. |
 
+## JavaScript engine (VST3)
+
+The VST3 can evaluate the formula with an embedded QuickJS-NG engine instead of
+the native bytecode VM. The MPC build does not include QuickJS; it always uses
+the native engine.
+
+In the editor's **PLAY** page, set **Engine** to **JavaScript**. The formula is
+recompiled by QuickJS and the output goes through the same clock, voicing,
+resampling and tone sections. **Ctrl+E** toggles the engine, **Ctrl+J** cycles
+the JS mode.
+
+**JS Modes**
+
+- **Expression** — the source is an expression:
+  `Math.sin(t/20)*100+128`.
+- **Function** — the source is a function body with a `return`:
+  `x = (typeof x === 'undefined' ? 0 : x) + 1; return x;`
+- **Script** — the source is a script that returns a function, useful for
+  initialisation and closures:
+  `const notes = [261.63, 329.63, 392.00]; return t => notes[(t >> 11) % 3];`
+
+The function (or returned function) receives, in order:
+
+```
+t, a, b, c, d, e, f, g, h, sr, time, beat, bar, tempo, playing,
+note, freq, vel, gate, voice
+```
+
+The prelude provides `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `trunc`,
+`int` (trunc), `abs`, `sign`, `sqrt`, `cbrt`, `exp`, `log`, `log2`, `log10`,
+`pow`, `min`, `max`, `hypot`, `clamp`, `frac`, `random`, `PI`, `TAU` and `E`.
+The result can be a number or `[left, right]`.
+
+Undeclared variables such as `x` are global to that voice's context and persist
+between samples. The three JS modes are compile settings; changing one applies
+the current editor text. A source that does not return a number/array at `t=0`
+is rejected at compile time. Runtime exceptions mute that tick and show
+`JS ERROR` in the editor header; a 1.5 ms interrupt budget aborts runaway loops.
+
+JavaScript is desktop-only and experimental: QuickJS can allocate and run a
+garbage collector on the audio thread, unlike the native VM. The native engine
+is the safe default and the only engine on the MPC. A `.bb` file using
+`Math.*` or other JS-only syntax will not run on the MPC unless it is rewritten
+in the native dialect.
+
 ## VST3 editor
 
 The editor has a code pane with syntax highlighting, a library list, a preview
@@ -320,15 +367,17 @@ does not need notes.
 
 ## Status
 
-v0.1.0: MPC ARM32/ARM64 + desktop VST2 + Linux VST3, formula compiler/VM,
-bytebeat/signed/floatbeat/stereo, A–H macros, free/sync/trigger modes, 24
-built-in formulas, user `.bb` files, MPC scripted UI, and a VST3 editor with
-library/scope. Windows VST3 is built by CI.
+v0.2.0: MPC ARM32/ARM64 + desktop VST2 + Linux/Windows VST3, native formula
+compiler/VM, bytebeat/signed/floatbeat/stereo, A–H macros, free/sync/trigger
+modes, 24 built-in formulas, user `.bb` files, MPC scripted UI, a VST3 editor
+with library/preview scope, and an optional QuickJS-NG JavaScript engine with
+Expression, Function and Script modes. Windows VST3 is built by CI.
 
 ## Licence
 
 SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 bokontep.
 
 JUCE 7.0.12 is GPLv3. The VST3 SDK bundled with JUCE is dual-licensed by
-Steinberg. The MPC Plugin SDK is MIT. See [`NOTICE.md`](NOTICE.md),
-[`LICENSE`](LICENSE) and [`LICENSES/`](LICENSES/).
+Steinberg. The MPC Plugin SDK is MIT. QuickJS-NG is MIT and is used only by the
+VST3. See [`NOTICE.md`](NOTICE.md), [`LICENSE`](LICENSE) and
+[`LICENSES/`](LICENSES/).

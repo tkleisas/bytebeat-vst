@@ -429,7 +429,7 @@ private:
         info.name         = "Bytebeat Machine";
         info.vendor       = "bokontep";
         info.uniqueId     = MPC_FOURCC('B', 'b', 't', '1');
-        info.version      = 100;
+        info.version      = 200;
         info.isInstrument = true;
         info.numInputs    = 0;
         info.numOutputs   = 2;

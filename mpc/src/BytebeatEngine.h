@@ -35,9 +35,20 @@ enum PlayMode : int
 
 constexpr int kMaxVoices = 8;
 
+// Optional alternative evaluation backend (the VST3 JavaScript engine).
+// The engine does not own this object; the caller keeps it alive for as long
+// as any Settings pointing to it may be rendered.
+struct Evaluator
+{
+    virtual ~Evaluator() = default;
+    virtual void evaluate(int voice, const double* globals, double* state,
+                          double& left, double& right) = 0;
+};
+
 struct Settings
 {
     const Program* program = nullptr;
+    Evaluator* evaluator = nullptr;
 
     int    outputMode = kOutBytebeat;
     double clockRate  = 8000.0;
@@ -109,8 +120,9 @@ public:
 
     void setSettings(const Settings& s)
     {
-        const bool programChanged = (s.program != settings_.program);
-        const bool modeChanged    = (s.playMode != settings_.playMode);
+        const bool programChanged   = (s.program != settings_.program);
+        const bool evaluatorChanged = (s.evaluator != settings_.evaluator);
+        const bool modeChanged      = (s.playMode != settings_.playMode);
 
         settings_ = s;
         settings_.clockRate = std::clamp(settings_.clockRate, 100.0, 384000.0);
@@ -125,7 +137,7 @@ public:
         settings_.attackMs  = std::clamp(settings_.attackMs, 0.0f, 500.0f);
         settings_.releaseMs = std::clamp(settings_.releaseMs, 0.0f, 10000.0f);
 
-        if (programChanged || modeChanged)
+        if (programChanged || evaluatorChanged || modeChanged)
             reset();
     }
 
@@ -227,7 +239,7 @@ public:
         if (left == nullptr || frames <= 0) return;
         if (right == nullptr) right = left;
 
-        if (settings_.program == nullptr)
+        if (settings_.program == nullptr && settings_.evaluator == nullptr)
         {
             std::memset(left, 0, sizeof(float) * (size_t)frames);
             if (right != left) std::memset(right, 0, sizeof(float) * (size_t)frames);
@@ -481,7 +493,7 @@ private:
 
     void evalVoice(Voice& v, int index)
     {
-        if (settings_.program == nullptr)
+        if (settings_.program == nullptr && settings_.evaluator == nullptr)
         {
             v.prevL = v.currL; v.prevR = v.currR;
             v.currL = v.currR = 0.0;
@@ -508,7 +520,10 @@ private:
             g[G_A + i] = macroSm_[i];
 
         double l = 0.0, r = 0.0;
-        run(*settings_.program, g, v.state, l, r);
+        if (settings_.evaluator != nullptr)
+            settings_.evaluator->evaluate(index, g, v.state, l, r);
+        else
+            run(*settings_.program, g, v.state, l, r);
 
         v.prevL = v.currL;
         v.prevR = v.currR;

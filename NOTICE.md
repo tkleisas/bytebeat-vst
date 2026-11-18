@@ -7,6 +7,8 @@ MIT-licensed. Its licence text is in `LICENSES/MPC-Plugin-SDK-MIT.txt` and is
 shipped with the plugin in `Content/THIRD_PARTY_LICENSES.txt`.
 
 The desktop VST3 build uses **JUCE 7.0.12** and the VST3 SDK bundled with JUCE.
+It also includes **QuickJS-NG** (MIT) for the optional JavaScript engine; its
+licence is in `LICENSES/QuickJS-NG-MIT.txt`.
 JUCE is GPLv3 (or commercial); the VST3 SDK is dual-licensed by Steinberg.
 Bytebeat Machine is distributed under GPL-3.0-or-later, which is compatible with
 JUCE's GPLv3 terms. The plugin contains no Steinberg VST SDK code in its VST2
@@ -24,3 +26,7 @@ The built-in formula bank is original work written for this project, except
 for the "Sierpinski" entry (`t&t>>8`), a widely known mathematical identity
 included as a demonstration. User formulas placed in `Content/Formulas/` remain
 the property of their authors.
+
+The JavaScript engine uses QuickJS-NG, MIT-licensed by Fabrice Bellard,
+Charlie Gordon and Ben Noordhuis. It is used only by the VST3 build; the MPC
+plugin does not include it.

@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cmath>
+#include <functional>
 
 namespace
 {
@@ -250,6 +251,35 @@ public:
         controls_.push_back(std::move(c));
     }
 
+    juce::ComboBox* addCustomCombo(const juce::String& name, const juce::StringArray& items,
+                                   int selected, std::function<void(int)> onChange)
+    {
+        auto label = std::make_unique<juce::Label>();
+        auto combo = std::make_unique<juce::ComboBox>();
+        configureLabel(*label, name);
+        combo->setColour(juce::ComboBox::backgroundColourId, kPanel2);
+        combo->setColour(juce::ComboBox::textColourId, kText);
+        combo->setColour(juce::ComboBox::outlineColourId, kOutline);
+        combo->setColour(juce::ComboBox::arrowColourId, kMuted);
+        combo->addItemList(items, 1);
+        combo->setSelectedItemIndex(juce::jlimit(0, juce::jmax(0, items.size() - 1), selected),
+                                    juce::dontSendNotification);
+        auto* comboPtr = combo.get();
+        combo->onChange = [comboPtr, cb = std::move(onChange)]()
+        {
+            if (cb)
+                cb(comboPtr->getSelectedItemIndex());
+        };
+        addAndMakeVisible(*combo);
+        addAndMakeVisible(*label);
+
+        Control c;
+        c.combo = std::move(combo);
+        c.label = std::move(label);
+        controls_.push_back(std::move(c));
+        return comboPtr;
+    }
+
     void resized() override
     {
         const int cols = 4;
@@ -468,6 +498,68 @@ BytebeatAudioProcessorEditor::BytebeatAudioProcessorEditor(BytebeatAudioProcesso
     macrosPanel_.reset(macros);
 
     auto* play = new GridPanel(proc);
+
+    engineCombo_ = play->addCustomCombo("Engine", { "Native", "JavaScript" },
+                                        proc.getEngineMode(),
+                                        [this](int index)
+                                        {
+                                            if (updatingCombos_) return;
+                                            juce::String error;
+                                            if (!proc.setEngineMode(index, error))
+                                            {
+                                                setStatus(error, true);
+                                                if (engineCombo_ != nullptr)
+                                                {
+                                                    updatingCombos_ = true;
+                                                    engineCombo_->setSelectedItemIndex(proc.getEngineMode(),
+                                                                                       juce::dontSendNotification);
+                                                    updatingCombos_ = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                setStatus(index == 1 ? "JavaScript engine" : "Native engine", false);
+                                            }
+                                        });
+
+    jsModeCombo_ = play->addCustomCombo("JS Mode", { "Expression", "Function", "Script" },
+                                        proc.getJsMode(),
+                                        [this](int index)
+                                        {
+                                            if (updatingCombos_) return;
+                                            const int previous = proc.getJsMode();
+                                            juce::String error;
+                                            if (!proc.setJsMode(index, error))
+                                            {
+                                                setStatus(error, true);
+                                                if (jsModeCombo_ != nullptr)
+                                                {
+                                                    updatingCombos_ = true;
+                                                    jsModeCombo_->setSelectedItemIndex(previous,
+                                                                                       juce::dontSendNotification);
+                                                    updatingCombos_ = false;
+                                                }
+                                                return;
+                                            }
+
+                                            if (!applyCurrentFormula())
+                                            {
+                                                juce::String ignored;
+                                                proc.setJsMode(previous, ignored);
+                                                if (jsModeCombo_ != nullptr)
+                                                {
+                                                    updatingCombos_ = true;
+                                                    jsModeCombo_->setSelectedItemIndex(previous,
+                                                                                       juce::dontSendNotification);
+                                                    updatingCombos_ = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                setStatus("JS mode: " + juce::String(bbvst::JsEvaluator::modeName(index)),
+                                                          false);
+                                            }
+                                        });
     play->addCombo(bbvst::pid::mode, "Mode", { "Bytebeat", "Signed", "Floatbeat" });
     play->addCombo(bbvst::pid::clock, "Clock",
                    { "4000", "8000", "11025", "16000", "22050", "32000", "44100", "48000" });
@@ -481,6 +573,7 @@ BytebeatAudioProcessorEditor::BytebeatAudioProcessorEditor(BytebeatAudioProcesso
     play->addKnob(bbvst::pid::attack, "Attack");
     play->addKnob(bbvst::pid::release, "Release");
     play->addToggle(bbvst::pid::resetNote, "Reset on Note");
+
     playPanel_.reset(play);
 
     tabs_ = std::make_unique<juce::TabbedComponent>(juce::TabbedButtonBar::TabsAtTop);
@@ -599,6 +692,29 @@ bool BytebeatAudioProcessorEditor::keyPressed(const juce::KeyPress& key, juce::C
         saveFormulaAs();
         return true;
     }
+    if ((mods.isCommandDown() || mods.isCtrlDown()) && key.getKeyCode() == 'E')
+    {
+        const int target = proc.getEngineMode() == BytebeatAudioProcessor::kEngineJs
+                               ? BytebeatAudioProcessor::kEngineNative
+                               : BytebeatAudioProcessor::kEngineJs;
+        juce::String error;
+        if (!proc.setEngineMode(target, error))
+            setStatus(error, true);
+        else
+            setStatus(target == BytebeatAudioProcessor::kEngineJs ? "JavaScript engine" : "Native engine",
+                      false);
+        return true;
+    }
+    if ((mods.isCommandDown() || mods.isCtrlDown()) && key.getKeyCode() == 'J')
+    {
+        const int target = (proc.getJsMode() + 1) % 3;
+        juce::String error;
+        if (!proc.setJsMode(target, error))
+            setStatus(error, true);
+        else
+            setStatus("JS mode: " + juce::String(bbvst::JsEvaluator::modeName(target)), false);
+        return true;
+    }
     return false;
 }
 
@@ -613,11 +729,34 @@ void BytebeatAudioProcessorEditor::timerCallback()
         applyCurrentFormula();
     }
 
-    opsLabel_.setText("ops " + juce::String(proc.getActiveProgramOps()),
-                      juce::dontSendNotification);
+    if (proc.getEngineMode() == BytebeatAudioProcessor::kEngineJs)
+    {
+        const bool jsError = proc.getJsRuntimeError();
+        opsLabel_.setText(jsError ? "JS ERROR" : "JS", juce::dontSendNotification);
+        opsLabel_.setColour(juce::Label::textColourId, jsError ? kError : kMuted);
+    }
+    else
+    {
+        opsLabel_.setText("ops " + juce::String(proc.getActiveProgramOps()),
+                          juce::dontSendNotification);
+        opsLabel_.setColour(juce::Label::textColourId, kMuted);
+    }
+
+    if (engineCombo_ != nullptr && engineCombo_->getSelectedItemIndex() != proc.getEngineMode())
+    {
+        updatingCombos_ = true;
+        engineCombo_->setSelectedItemIndex(proc.getEngineMode(), juce::dontSendNotification);
+        updatingCombos_ = false;
+    }
+    if (jsModeCombo_ != nullptr && jsModeCombo_->getSelectedItemIndex() != proc.getJsMode())
+    {
+        updatingCombos_ = true;
+        jsModeCombo_->setSelectedItemIndex(proc.getJsMode(), juce::dontSendNotification);
+        updatingCombos_ = false;
+    }
 }
 
-void BytebeatAudioProcessorEditor::applyCurrentFormula()
+bool BytebeatAudioProcessorEditor::applyCurrentFormula()
 {
     const auto source = document_.getAllContent();
     const auto name = nameEditor_.getText().trim();
@@ -627,13 +766,16 @@ void BytebeatAudioProcessorEditor::applyCurrentFormula()
     {
         dirty_ = false;
         lastRevision_ = proc.getFormulaRevision();
-        setStatus("Applied: " + juce::String(proc.getActiveProgramOps()) + " ops", false);
+        if (proc.getEngineMode() == BytebeatAudioProcessor::kEngineJs)
+            setStatus("Applied (JavaScript)", false);
+        else
+            setStatus("Applied: " + juce::String(proc.getActiveProgramOps()) + " ops", false);
+        return true;
     }
-    else
-    {
-        setStatus(error, true);
-        updateErrorMarker();
-    }
+
+    setStatus(error, true);
+    updateErrorMarker();
+    return false;
 }
 
 void BytebeatAudioProcessorEditor::loadLibraryRow(int row)

@@ -8,7 +8,7 @@ SDK_COMMIT="${SDK_COMMIT:-a5949cf6fe2cbfb95bcbe0ddf1f7ef555e71f2be}"
 PYTHON="${PYTHON:-python3}"
 PLUGIN="$ROOT/mpc"
 PLUGIN_NAME="Bytebeat Machine"
-VERSION="0.1.0"
+VERSION="0.2.0"
 
 if [ -n "${SDK_DIR:-}" ]; then
     case "$SDK_DIR" in
@@ -98,7 +98,8 @@ if [ "${SKIP_VST3:-0}" != "1" ] && [ -f "$ROOT/vst3/CMakeLists.txt" ]; then
     rm -rf "$ROOT/dist/$PLUGIN_NAME.vst3"
     cp -a "$VST3_BUNDLE" "$ROOT/dist/"
     ( cd "$ROOT/dist" && rm -f "bytebeat-machine-$VERSION-linux-vst3.zip" \
-        && zip -qr "bytebeat-machine-$VERSION-linux-vst3.zip" "$PLUGIN_NAME.vst3" LICENSE NOTICE.md )
+        && zip -qr "bytebeat-machine-$VERSION-linux-vst3.zip" "$PLUGIN_NAME.vst3" LICENSE NOTICE.md \
+        && zip -qj "bytebeat-machine-$VERSION-linux-vst3.zip" "$ROOT/LICENSES/QuickJS-NG-MIT.txt" )
 fi
 
 echo
