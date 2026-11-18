@@ -281,7 +281,7 @@ The MPC loader and the VST3 `.bb` files understand these leading comments:
 
 ## VST3 editor
 
-The editor has a code pane with syntax highlighting, a library list, a live
+The editor has a code pane with syntax highlighting, a library list, a preview
 waveform/spectrum scope, macro knobs and a play page. **Apply** (Ctrl+Enter)
 compiles the formula; a compile error shows the line/column and leaves the
 previous valid program running. **Auto** applies after a short pause.
