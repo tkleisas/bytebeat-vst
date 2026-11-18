@@ -25,8 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw "could not check out SDK commit $SdkCommit" }
 
 $PluginDir = Join-Path $SdkDir "plugins/$PluginName"
 if (Test-Path $PluginDir) { Remove-Item -Recurse -Force $PluginDir }
-New-Item -ItemType Directory -Force -Path (Join-Path $SdkDir "plugins") | Out-Null
-Copy-Item -Recurse (Join-Path $Root "mpc") (Join-Path $SdkDir "plugins")
+New-Item -ItemType Directory -Force -Path $PluginDir | Out-Null
+Copy-Item -Recurse -Force -Path (Join-Path $Root "mpc/*") -Destination $PluginDir
 
 $ZigArgs = @()
 if ($env:ZIG) { $ZigArgs = @("--zig", $env:ZIG) }

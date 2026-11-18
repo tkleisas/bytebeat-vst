@@ -226,6 +226,11 @@ public:
         const bool staged = stagedValid_.exchange(false, std::memory_order_acq_rel);
         if (staged && stagedProgram_ != nullptr)
         {
+            // The engine's current settings may still point at the program we
+            // are replacing. Do not call engine_.reset() here: the next
+            // process() calls setSettings(), which sees the new program pointer
+            // and resets with it before rendering. This avoids a use-after-free
+            // when a second project state replaces a stored formula.
             storedProgram_ = std::move(stagedProgram_);
             storedMode_.store(stagedMode_, std::memory_order_release);
             storedRate_.store(stagedRate_, std::memory_order_release);
@@ -233,8 +238,11 @@ public:
             storedSource_ = std::move(stagedSource_);
             storedName_ = std::move(stagedName_);
         }
+        else
+        {
+            engine_.reset();
+        }
         selectionDirty_.store(true, std::memory_order_release);
-        engine_.reset();
     }
 
     void parameterChanged(int index, float plainValue) override
@@ -390,6 +398,9 @@ public:
         if (!result.ok)
         {
             stagedValid_.store(false, std::memory_order_release);
+            // Fall back to the library selection rather than continuing to
+            // play a formula from a previous project.
+            useStored_.store(false, std::memory_order_release);
             return;
         }
 

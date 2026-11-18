@@ -8,7 +8,7 @@
 - Bytebeat, signed bytebeat and floatbeat modes; 4 kHz–48 kHz clock with
   free/sync/trigger play modes and 1–8 voices.
 - A–H macro parameters; tone, drive, DC block, width, pan and soft clip.
-- 24 original built-in formulas plus user `.bb` files with metadata directives.
+- 24 built-in formulas plus user `.bb` files with metadata directives.
 - MPC OS 3.10.1+ plugin (ARM32/ARM64) with four scripted UI pages and 13
   factory programs.
 - Desktop VST2 build for testing.
