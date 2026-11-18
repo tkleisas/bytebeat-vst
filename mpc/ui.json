@@ -1,0 +1,75 @@
+{
+  "kit": "violet",
+  "pages": [
+    {
+      "name": "SOURCE",
+      "controls": [
+        {"param": "Formula", "widget": "knob", "overlay": "menu"},
+        {"param": "User Bank", "widget": "switch"},
+        {"param": "User Slot", "widget": "knob"},
+        {"param": "Mode", "widget": "switch"},
+        {"param": "Clock", "widget": "knob", "overlay": "menu"},
+        {"param": "Play Mode", "widget": "switch"},
+        {"param": "Run", "widget": "switch"},
+        {"param": "Speed", "widget": "knob"},
+        {"param": "Smooth", "widget": "knob"},
+        {"param": "Volume", "widget": "fader"},
+        {"param": "Status", "widget": "knob"},
+        "empty"
+      ]
+    },
+    {
+      "name": "MACROS",
+      "controls": [
+        {"param": "A", "widget": "knob"},
+        {"param": "B", "widget": "knob"},
+        {"param": "C", "widget": "knob"},
+        {"param": "D", "widget": "knob"},
+        {"param": "E", "widget": "knob"},
+        {"param": "F", "widget": "knob"},
+        {"param": "G", "widget": "knob"},
+        {"param": "H", "widget": "knob"},
+        {"param": "Tone", "widget": "knob"},
+        {"param": "Drive", "widget": "knob"},
+        {"param": "DC Block", "widget": "switch"},
+        {"param": "Width", "widget": "knob"},
+        {"param": "Pan", "widget": "knob", "polarity": "bipolar"},
+        {"param": "Volume", "widget": "fader"},
+        {"param": "Status", "widget": "knob"}
+      ]
+    },
+    {
+      "name": "PLAY",
+      "controls": [
+        {"param": "Play Mode", "widget": "switch"},
+        {"param": "Voices", "widget": "knob"},
+        {"param": "Root", "widget": "knob"},
+        {"param": "Pitch", "widget": "switch"},
+        {"param": "Attack", "widget": "knob"},
+        {"param": "Release", "widget": "knob"},
+        {"param": "Reset", "widget": "switch"},
+        {"param": "Run", "widget": "switch"},
+        {"param": "Speed", "widget": "knob"},
+        {"param": "Clock", "widget": "knob", "overlay": "menu"},
+        {"param": "Smooth", "widget": "knob"},
+        {"param": "Volume", "widget": "fader"}
+      ]
+    },
+    {
+      "name": "INFO",
+      "controls": [
+        {"param": "Status", "widget": "knob"},
+        {"param": "Formula", "widget": "knob", "overlay": "menu"},
+        {"param": "User Slot", "widget": "knob"},
+        {"widget": "text", "text": "Bytebeat Machine"},
+        {"widget": "text", "text": "t, a-h, x/y/z state"},
+        {"widget": "text", "text": "User files: Content/Formulas"},
+        {"widget": "text", "text": "MPC OS 3.10.1+"},
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    }
+  ]
+}

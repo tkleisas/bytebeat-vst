@@ -1,0 +1,18 @@
+Bytebeat Machine - third-party licenses
+=======================================
+
+Bytebeat Machine is GPL-3.0-or-later. The full GPL text is in COPYING.txt.
+
+MPC Plugin SDK
+--------------
+The MPC build is made with the inMusic MPC Plugin Builder SDK, which is
+MIT-licensed. The full MIT text is in MPC-Plugin-SDK-MIT.txt.
+
+The desktop VST3 build uses JUCE 7.0.12 and the VST3 SDK bundled with JUCE.
+JUCE is GPLv3 (or commercial); the VST3 SDK is dual-licensed by Steinberg.
+Bytebeat Machine is distributed under GPL-3.0-or-later, compatible with JUCE's
+GPLv3 terms. The VST2 build contains no Steinberg VST SDK code.
+
+The bytebeat compiler, VM and engine in mpc/src/Bytebeat*.h are original work.
+No third-party bytebeat player code is copied. User .bb files remain the
+property of their authors.

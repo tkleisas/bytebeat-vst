@@ -1,0 +1,26 @@
+# Bytebeat Machine - third-party notices
+
+Bytebeat Machine is licensed GPL-3.0-or-later. Copyright (C) 2026 bokontep.
+
+The MPC build is made with the **inMusic MPC Plugin Builder SDK**, which is
+MIT-licensed. Its licence text is in `LICENSES/MPC-Plugin-SDK-MIT.txt` and is
+shipped with the plugin in `Content/THIRD_PARTY_LICENSES.txt`.
+
+The desktop VST3 build uses **JUCE 7.0.12** and the VST3 SDK bundled with JUCE.
+JUCE is GPLv3 (or commercial); the VST3 SDK is dual-licensed by Steinberg.
+Bytebeat Machine is distributed under GPL-3.0-or-later, which is compatible with
+JUCE's GPLv3 terms. The plugin contains no Steinberg VST SDK code in its VST2
+build.
+
+"DSP" here means the bytebeat compiler, virtual machine and engine in
+`mpc/src/Bytebeat*.h`. Those files are original work; no third-party bytebeat
+player code is copied.
+
+"VST" is a trademark of Steinberg Media Technologies GmbH. "Akai", "MPC" and
+"inMusic" are trademarks of their respective owners. This project is not
+affiliated with or endorsed by Steinberg, inMusic, or Akai Professional.
+
+The built-in formula bank is original work written for this project, except
+for the "Sierpinski" entry (`t&t>>8`), a widely known mathematical identity
+included as a demonstration. User formulas placed in `Content/Formulas/` remain
+the property of their authors.

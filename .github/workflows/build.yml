@@ -1,0 +1,78 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev libx11-dev libxext-dev libxinerama-dev \
+            libxrandr-dev libxcursor-dev libfreetype6-dev libfontconfig1-dev
+
+      - name: Install Zig
+        run: pip install ziglang
+
+      - name: Core tests
+        run: |
+          cmake -S tests -B tests/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build tests/build -j"$(nproc)"
+          ctest --test-dir tests/build --output-on-failure
+
+      - name: Build MPC + desktop + VST3
+        env:
+          ZIG: python
+        run: ./build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bytebeat-linux
+          path: dist/*.zip
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Zig
+        run: pip install ziglang
+
+      - name: Core tests
+        run: |
+          cmake -S tests -B tests/build -G "Visual Studio 17 2022" -A x64
+          cmake --build tests/build --config Release
+          ctest --test-dir tests/build -C Release --output-on-failure
+
+      - name: Build MPC + desktop + VST3
+        env:
+          ZIG: python
+        run: ./build.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bytebeat-windows
+          path: dist/*.zip
+          if-no-files-found: error

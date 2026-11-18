@@ -1,0 +1,22 @@
+# Build outputs
+.sdk/
+dist/
+vst3/build/
+vst3/build-windows/
+tests/build/
+build-desktop/
+*.vst3
+*.so
+*.dll
+*.dylib
+
+# Local test output
+*.wav
+*.log
+yawn.log
+
+# Editors / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/

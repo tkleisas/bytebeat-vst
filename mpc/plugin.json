@@ -1,0 +1,17 @@
+{
+  "name": "Bytebeat Machine",
+  "manufacturer": "bokontep",
+  "version": "0.1.0",
+  "format": "vst2",
+  "kind": "instrument",
+  "uid": "Bbt1",
+  "numInputs": 0,
+  "numOutputs": 2,
+  "category": "Synth",
+  "file32": "VST/bytebeat-machine-arm32.so",
+  "file64": "VST/bytebeat-machine-arm64.so",
+  "description": "Bytebeat instrument: JS-like formulas evaluated at a selectable 4-48 kHz clock, with bytebeat, signed bytebeat and floatbeat output, stereo formulas, A-H macros, free/sync/trigger play modes, and user .bb files from Content/Formulas. Built for MPC OS 3.10.1+ and desktop VST2 hosts.",
+  "author": "bokontep",
+  "url": "https://github.com/tkleisas/bytebeat-vst",
+  "license": "GPL-3.0-or-later"
+}

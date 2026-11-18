@@ -1,0 +1,431 @@
+diff --git a/src/app/App_Lifecycle.cpp b/src/app/App_Lifecycle.cpp
+index c6e61fa..2a7e4e5 100644
+--- a/src/app/App_Lifecycle.cpp
++++ b/src/app/App_Lifecycle.cpp
+@@ -1,6 +1,10 @@
+ // App_Lifecycle.cpp — init() (SDL/GL/audio/MIDI/panel wiring), run()
+ // and shutdown(). Split out of App.cpp.
+ #include "app/App.h"
++#ifdef YAWN_HAS_VST3
++#include "vst3/VST3Instrument.h"
++#include "vst3/VST3Effect.h"
++#endif
+ 
+ #include <cstdlib>
+ #include "Version.h"
+@@ -1336,6 +1340,36 @@ bool App::init() {
+             showMacroMappingMenu(t, mx, my);
+         });
+ 
++#ifdef YAWN_HAS_VST3
++    m_detailPanel->setOnOpenEditor([this](ui::fw2::DetailPanelWidget::DeviceType type,
++                                           int chainIndex) {
++        auto getAudioEffect = [this](int ci) -> effects::AudioEffect* {
++            switch (m_detailTarget) {
++                case DetailTarget::Track:     return m_audioEngine.mixer().trackEffects(m_selectedTrack).effectAt(ci);
++                case DetailTarget::ReturnBus: return m_audioEngine.mixer().returnEffects(m_detailReturnBus).effectAt(ci);
++                case DetailTarget::Master:    return m_audioEngine.mixer().masterEffects().effectAt(ci);
++            }
++            return nullptr;
++        };
++        if (type == ui::fw2::DetailPanelWidget::DeviceType::Instrument) {
++            if (m_detailTarget != DetailTarget::Track) return;
++            if (m_selectedTrack < 0 || m_selectedTrack >= m_project.numTracks()) return;
++            auto* inst = m_audioEngine.instrument(m_selectedTrack);
++            auto* v = dynamic_cast<vst3::VST3Instrument*>(inst);
++            if (v && v->instance())
++                openVST3Editor(v->instance(), v->modulePath(), v->classIDString(),
++                               std::string(v->name()) + " - Track " +
++                                   std::to_string(m_selectedTrack + 1));
++        } else if (type == ui::fw2::DetailPanelWidget::DeviceType::AudioFx) {
++            auto* fx = getAudioEffect(chainIndex);
++            auto* v = dynamic_cast<vst3::VST3Effect*>(fx);
++            if (v && v->instance())
++                openVST3Editor(v->instance(), v->modulePath(), v->classIDString(),
++                               std::string(v->name()) + " - Editor");
++        }
++    });
++#endif
++
+     // Wire preset click: open context menu with preset list + Save
+     m_detailPanel->setOnPresetClick([this](ui::fw2::DetailPanelWidget::DeviceType type,
+                                            int chainIndex, float mx, float my) {
+diff --git a/src/ui/framework/v2/DeviceHeaderWidget.h b/src/ui/framework/v2/DeviceHeaderWidget.h
+index 576d779..dbfa091 100644
+--- a/src/ui/framework/v2/DeviceHeaderWidget.h
++++ b/src/ui/framework/v2/DeviceHeaderWidget.h
+@@ -55,6 +55,8 @@ public:
+     void setOnRemove(ActionCallback cb)            { m_onRemove      = std::move(cb); }
+     void setOnDragStart(ActionCallback cb)         { m_onDragStart   = std::move(cb); }
+     void setOnPresetClick(PresetClickCallback cb)  { m_onPresetClick = std::move(cb); }
++    void setOnOpenEditor(ActionCallback cb)         { m_onOpenEditor = std::move(cb); }
++    void setEditorButtonVisible(bool v)             { m_showEditor = v; }
+ 
+     // ─── Device-type stripe color ──────────────────────────────────────
+     Color deviceColor() const {
+@@ -87,6 +89,7 @@ public:
+     Rect bypassBtnRect() const { return m_bypassBtn; }
+     Rect removeBtnRect() const { return m_removeBtn; }
+     Rect presetBtnRect() const { return m_presetBtn; }
++    Rect editorBtnRect() const { return m_editorBtn; }
+ 
+     // ─── Layout ─────────────────────────────────────────────────────────
+ 
+@@ -101,6 +104,9 @@ public:
+         m_bypassBtn = {x + 22, y + 4, kBypassW, kBtnSize};
+         m_removeBtn = m_removable ? Rect{x + w - 20, y + 4, kBtnSize, kBtnSize}
+                                    : Rect{};
++        const float buttonRight = m_removable ? (x + w - 24) : (x + w - 4);
++        m_editorBtn = m_showEditor ? Rect{buttonRight - 30, y + 4, 28, kBtnSize}
++                                   : Rect{};
+         recomputePresetRect(bounds, ctx);
+     }
+ 
+@@ -155,6 +161,20 @@ public:
+         const float nameX = x + 22 + kBypassW + 6;
+         if (tm) tm->drawText(r, m_name, nameX, m_expandBtn.y, kFsMed, nameC);
+ 
++        // VST3 editor button
++        if (m_showEditor) {
++            r.drawRect(m_editorBtn.x, m_editorBtn.y, m_editorBtn.w, m_editorBtn.h,
++                       Color{40, 70, 110, 255});
++            r.drawRectOutline(m_editorBtn.x, m_editorBtn.y, m_editorBtn.w, m_editorBtn.h,
++                              Color{90, 140, 200, 255});
++            if (tm) {
++                const float tw = tm->textWidth("UI", kFsTiny);
++                tm->drawText(r, "UI",
++                             m_editorBtn.x + (m_editorBtn.w - tw) * 0.5f,
++                             m_editorBtn.y + 3, kFsTiny, Color{190, 220, 255, 255});
++            }
++        }
++
+         // Remove button
+         if (m_removable) {
+             r.drawRect(m_removeBtn.x, m_removeBtn.y, kBtnSize, kBtnSize,
+@@ -216,6 +236,11 @@ public:
+                  m_presetBtn.w, m_presetBtn.h,
+                  static_cast<int>(static_cast<bool>(m_onPresetClick)));
+ 
++        if (m_showEditor && hitTestRect(m_editorBtn, px, py)) {
++            if (m_onOpenEditor) m_onOpenEditor();
++            return true;
++        }
++
+         if (hitTestRect(m_expandBtn, px, py)) {
+             m_expanded = !m_expanded;
+             if (m_onExpandToggle) m_onExpandToggle(m_expanded);
+@@ -256,11 +281,14 @@ private:
+     ActionCallback       m_onRemove;
+     ActionCallback       m_onDragStart;
+     PresetClickCallback  m_onPresetClick;
++    ActionCallback       m_onOpenEditor;
++    bool                 m_showEditor = false;
+ 
+     Rect m_expandBtn{};
+     Rect m_bypassBtn{};
+     Rect m_removeBtn{};
+     Rect m_presetBtn{};
++    Rect m_editorBtn{};
+     float m_presetMarqueeFrame = 0.0f;  // billboard scroll for long preset names
+ 
+     std::string presetButtonLabel() const {
+@@ -288,7 +316,8 @@ private:
+         const float presetH  = kHeaderH - kStripeH - 2;
+         const float presetY  = y + kStripeH + 1;
+         float       presetW  = labelW + 10;
+-        const float maxRight = m_removable ? (x + w - 24) : (x + w - 4);
++        const float maxRight = m_showEditor ? (m_editorBtn.x - 4)
++                                            : (m_removable ? (x + w - 24) : (x + w - 4));
+         if (presetX + presetW > maxRight) presetW = maxRight - presetX;
+         if (presetW < 20) presetW = 20;
+         m_presetBtn = {presetX, presetY, presetW, presetH};
+diff --git a/src/ui/framework/v2/DeviceWidget.h b/src/ui/framework/v2/DeviceWidget.h
+index 642e4c6..a611b08 100644
+--- a/src/ui/framework/v2/DeviceWidget.h
++++ b/src/ui/framework/v2/DeviceWidget.h
+@@ -298,6 +298,10 @@ public:
+         });
+     }
+     void setPresetName(const std::string& name) { m_header.setPresetName(name); }
++    void setEditorButtonVisible(bool v) { m_header.setEditorButtonVisible(v); }
++    void setOnOpenEditor(DeviceHeaderWidget::ActionCallback cb) {
++        m_header.setOnOpenEditor(std::move(cb));
++    }
+ 
+     // ─── Knob edit forwarding (customBody is handled by wrapper) ────
+ 
+diff --git a/src/ui/panels/DetailPanelWidget.h b/src/ui/panels/DetailPanelWidget.h
+index 4c49d35..d92a05a 100644
+--- a/src/ui/panels/DetailPanelWidget.h
++++ b/src/ui/panels/DetailPanelWidget.h
+@@ -37,6 +37,10 @@
+ #include "ui/framework/v2/Toggle.h"
+ #include "ui/framework/v2/UIContext.h"
+ #include "ui/Theme.h"
++#ifdef YAWN_HAS_VST3
++#include "vst3/VST3Instrument.h"
++#include "vst3/VST3Effect.h"
++#endif
+ #include "audio/Clip.h"
+ #include "audio/FollowAction.h"
+ #include "audio/TransientDetector.h"
+@@ -238,6 +242,8 @@ public:
+     // Preset click: (DeviceType, chainIndex, screenX, screenY)
+     using PresetClickCallback = std::function<void(DeviceType, int, float, float)>;
+     void setOnPresetClick(PresetClickCallback cb) { m_onPresetClick = std::move(cb); }
++    using OpenEditorCallback = std::function<void(DeviceType, int)>;
++    void setOnOpenEditor(OpenEditorCallback cb) { m_onOpenEditor = std::move(cb); }
+ 
+     // Update preset name shown on a device header
+     void setDevicePresetName(DeviceType type, int chainIndex, const std::string& name) {
+@@ -1560,6 +1566,20 @@ private:
+ 
+     // ── Build params and wire callbacks for a DeviceWidget ──
+     void configureDeviceWidget(DeviceWidget* dw, const DeviceRef& ref) {
++        bool isVst3 = false;
++#ifdef YAWN_HAS_VST3
++        if (ref.type == DeviceType::Instrument && ref.instrument)
++            isVst3 = dynamic_cast<vst3::VST3Instrument*>(ref.instrument) != nullptr;
++        else if (ref.type == DeviceType::AudioFx && ref.audioEffect)
++            isVst3 = dynamic_cast<vst3::VST3Effect*>(ref.audioEffect) != nullptr;
++#endif
++        dw->setEditorButtonVisible(isVst3);
++        if (isVst3) {
++            dw->setOnOpenEditor([this, type = ref.type, chainIdx = ref.chainIndex]() {
++                if (m_onOpenEditor) m_onOpenEditor(type, chainIdx);
++            });
++        }
++
+         std::vector<DeviceWidget::ParamInfo> params;
+         int count = ref.paramCount();
+         for (int p = 0; p < count; ++p) {
+@@ -2037,6 +2057,7 @@ private:
+     }
+ 
+     std::function<void(DeviceType, int)> m_onRemoveDevice;
++    std::function<void(DeviceType, int)> m_onOpenEditor;
+     std::function<void(DeviceType, int, int)> m_onMoveDevice;
+     ParamTouchCallback     m_onParamTouch;
+     ParamRightClickCallback m_onParamRightClick;
+diff --git a/src/vst3/VST3EditorHost.cpp b/src/vst3/VST3EditorHost.cpp
+index 59c5d0b..f9bafa2 100644
+--- a/src/vst3/VST3EditorHost.cpp
++++ b/src/vst3/VST3EditorHost.cpp
+@@ -136,6 +136,8 @@ static HWND g_mainHwnd = nullptr;
+ 
+ class MemoryStream : public IBStream {
+ public:
++    MemoryStream() = default;
++    explicit MemoryStream(const std::vector<uint8_t>& data) : m_data(data) {}
+     tresult PLUGIN_API read(void* buffer, int32 numBytes, int32* numBytesRead) override {
+         int32 avail = static_cast<int32>(m_data.size()) - m_pos;
+         int32 toRead = (numBytes < avail) ? numBytes : avail;
+@@ -667,10 +669,13 @@ static ::Atom g_wmDeleteAtom = 0;
+ static const int g_stdoutFd = STDOUT_FILENO;
+ static const int g_stdinFd = STDIN_FILENO;
+ static volatile bool g_quit = false;
++static std::vector<uint8_t> g_lastSentState;
+ 
+ // ── MemoryStream ──
+ class MemoryStream : public IBStream {
+ public:
++    MemoryStream() = default;
++    explicit MemoryStream(const std::vector<uint8_t>& data) : m_data(data) {}
+     tresult PLUGIN_API read(void* buffer, int32 numBytes, int32* numBytesRead) override {
+         int32 avail = static_cast<int32>(m_data.size()) - m_pos;
+         int32 toRead = (numBytes < avail) ? numBytes : avail;
+@@ -739,6 +744,11 @@ static void sendState() {
+     auto* stream = new MemoryStream();
+     if (g_component->getState(static_cast<IBStream*>(stream)) == kResultOk &&
+         !stream->data().empty()) {
++        if (stream->data() == g_lastSentState) {
++            stream->release();
++            return;
++        }
++        g_lastSentState = stream->data();
+         std::string hex = toHex(stream->data());
+         std::string msg = "STATE " + hex + "\n";
+         writePipe(msg.c_str(), static_cast<int>(msg.size()));
+@@ -895,6 +905,38 @@ static EditorComponentHandler g_componentHandler;
+ // ── stdin command parser ──
+ static std::string g_stdinBuf;
+ 
++static bool decodeHex(const std::string& hex, std::vector<uint8_t>& out) {
++    if (hex.size() % 2 != 0 || hex.size() > (size_t)64 * 1024 * 1024) return false;
++    out.clear();
++    out.reserve(hex.size() / 2);
++    for (size_t i = 0; i + 1 < hex.size(); i += 2) {
++        unsigned byte = 0;
++        if (std::sscanf(hex.c_str() + i, "%2x", &byte) != 1) return false;
++        out.push_back(static_cast<uint8_t>(byte));
++    }
++    return true;
++}
++
++static void applyProcessorState(const std::vector<uint8_t>& data) {
++    if (!g_component || data.empty()) return;
++    auto* s = new MemoryStream(data);
++    Steinberg::IPtr<Steinberg::IBStream> sp(s, false);
++    if (g_component->setState(sp) != Steinberg::kResultOk) return;
++    g_lastSentState = data;
++    if (g_controller) {
++        auto* s2 = new MemoryStream(data);
++        Steinberg::IPtr<Steinberg::IBStream> sp2(s2, false);
++        g_controller->setComponentState(sp2);
++    }
++}
++
++static void applyControllerState(const std::vector<uint8_t>& data) {
++    if (!g_controller || data.empty()) return;
++    auto* s = new MemoryStream(data);
++    Steinberg::IPtr<Steinberg::IBStream> sp(s, false);
++    g_controller->setState(sp);
++}
++
+ static void handleStdinLine(const std::string& line) {
+     if (line.size() > 6 && line[0] == 'P' && line[1] == 'A') {
+         unsigned rawId = 0;
+@@ -904,6 +946,20 @@ static void handleStdinLine(const std::string& line) {
+                 g_controller->setParamNormalized(static_cast<Vst::ParamID>(rawId), value);
+             }
+         }
++    } else if (line.rfind("STATE ", 0) == 0) {
++        std::vector<uint8_t> data;
++        if (decodeHex(line.substr(6), data)) {
++            std::fprintf(stderr, "[yawn_vst3_host] applying initial processor state (%zu bytes)\n",
++                         data.size());
++            applyProcessorState(data);
++        }
++    } else if (line.rfind("CSTATE ", 0) == 0) {
++        std::vector<uint8_t> data;
++        if (decodeHex(line.substr(7), data)) {
++            std::fprintf(stderr, "[yawn_vst3_host] applying initial controller state (%zu bytes)\n",
++                         data.size());
++            applyControllerState(data);
++        }
+     } else if (line == "CLOSE") {
+         g_quit = true;
+     }
+@@ -1186,6 +1242,11 @@ int main(int argc, char* argv[]) {
+         }
+ 
+         int64_t now = RunLoopImpl::nowMs();
++        static int64_t lastStatePollMs = 0;
++        if (now - lastStatePollMs >= 500) {
++            lastStatePollMs = now;
++            sendState();
++        }
+         int64_t nextDeadline = now + 50;  // 50 ms ceiling so we re-poll regularly
+         for (auto& t : g_runLoop.m_timers) {
+             if (t.nextFireMs < nextDeadline) nextDeadline = t.nextFireMs;
+diff --git a/src/vst3/VST3EditorWindow.cpp b/src/vst3/VST3EditorWindow.cpp
+index 0bdcb0d..1691ec8 100644
+--- a/src/vst3/VST3EditorWindow.cpp
++++ b/src/vst3/VST3EditorWindow.cpp
+@@ -36,6 +36,7 @@ bool VST3EditorWindow::open(VST3PluginInstance* instance,
+     if (!instance) return false;
+ 
+     m_instance = instance;
++    m_initialStateSent = false;
+ 
+     // ── Create anonymous pipes for bidirectional IPC ──
+     SECURITY_ATTRIBUTES sa;
+@@ -149,6 +150,7 @@ void VST3EditorWindow::close() {
+         m_pipeWrite = INVALID_HANDLE_VALUE;
+     }
+     m_readBuffer.clear();
++    m_initialStateSent = false;
+     m_instance = nullptr;
+ }
+ 
+@@ -224,6 +226,7 @@ bool VST3EditorWindow::open(VST3PluginInstance* instance,
+     (void)_ignore_sigpipe;
+ 
+     m_instance = instance;
++    m_initialStateSent = false;
+ 
+     int childIn[2]  = {-1, -1};  // parent writes childIn[1] -> child stdin childIn[0]
+     int childOut[2] = {-1, -1};  // child writes childOut[1] -> parent reads childOut[0]
+@@ -318,6 +321,7 @@ void VST3EditorWindow::close() {
+     if (m_pipeRead  >= 0) { ::close(m_pipeRead);  m_pipeRead  = -1; }
+     if (m_pipeWrite >= 0) { ::close(m_pipeWrite); m_pipeWrite = -1; }
+     m_readBuffer.clear();
++    m_initialStateSent = false;
+     m_instance = nullptr;
+ }
+ 
+@@ -382,6 +386,50 @@ void VST3EditorWindow::sendParamChange(unsigned int, double) {}
+ #endif // _WIN32 / __linux__
+ 
+ // ── Platform-agnostic line parser ──
++static std::string toHex(const std::vector<uint8_t>& data) {
++    static const char hex[] = "0123456789ABCDEF";
++    std::string out;
++    out.reserve(data.size() * 2);
++    for (uint8_t b : data) {
++        out.push_back(hex[b >> 4]);
++        out.push_back(hex[b & 0xF]);
++    }
++    return out;
++}
++
++void VST3EditorWindow::sendInitialState() {
++    if (!m_instance) return;
++
++    auto sendRaw = [this](const std::string& msg) {
++        if (msg.empty()) return;
++#ifdef _WIN32
++        if (m_pipeWrite == INVALID_HANDLE_VALUE) return;
++        DWORD written = 0;
++        WriteFile(m_pipeWrite, msg.data(), (DWORD)msg.size(), &written, nullptr);
++#else
++        if (m_pipeWrite < 0) return;
++        size_t off = 0;
++        while (off < msg.size()) {
++            ssize_t n = ::write(m_pipeWrite, msg.data() + off, msg.size() - off);
++            if (n <= 0) break;
++            off += (size_t)n;
++        }
++#endif
++    };
++
++    std::vector<uint8_t> processorState;
++    if (m_instance->getProcessorState(processorState) && !processorState.empty()) {
++        LOG_INFO("VST3", "Sending initial processor state (%zu bytes)", processorState.size());
++        sendRaw("STATE " + toHex(processorState) + "\n");
++    }
++    std::vector<uint8_t> controllerState;
++    if (m_instance->getControllerState(controllerState) && !controllerState.empty()) {
++        LOG_INFO("VST3", "Sending initial controller state (%zu bytes)", controllerState.size());
++        sendRaw("CSTATE " + toHex(controllerState) + "\n");
++    }
++    m_initialStateSent = true;
++}
++
+ void VST3EditorWindow::processLine(const std::string& line) {
+     if (line.size() > 6 && line[0] == 'P' && line[1] == 'A') {
+         // "PARAM <id> <value>"
+@@ -410,6 +458,8 @@ void VST3EditorWindow::processLine(const std::string& line) {
+         }
+     } else if (line == "READY") {
+         LOG_INFO("VST3", "Editor process ready");
++        if (!m_initialStateSent)
++            sendInitialState();
+     }
+ }
+ 
+diff --git a/src/vst3/VST3EditorWindow.h b/src/vst3/VST3EditorWindow.h
+index d652fa7..cee091d 100644
+--- a/src/vst3/VST3EditorWindow.h
++++ b/src/vst3/VST3EditorWindow.h
+@@ -51,8 +51,10 @@ public:
+ 
+ private:
+     void processLine(const std::string& line);
++    void sendInitialState();
+ 
+     VST3PluginInstance* m_instance = nullptr;
++    bool m_initialStateSent = false;
+ 
+ #ifdef _WIN32
+     HANDLE m_process = nullptr;
