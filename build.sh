@@ -41,11 +41,7 @@ git -C "$SDK_DIR" checkout --quiet "$SDK_COMMIT"
 ZIG_ARGS=()
 if [ -n "${ZIG:-}" ]; then ZIG_ARGS=(--zig "$ZIG"); fi
 
-HOST_SIM="$SDK_DIR/.sdk-tools/host_sim"
-if [ ! -x "$HOST_SIM" ] && [ ! -f "$HOST_SIM" ]; then
-    echo "error: host_sim not found at $HOST_SIM" >&2
-    exit 1
-fi
+HOST_SIM="$SDK_DIR/.sdk-tools/host_sim" # built by tools/build.py on first use
 
 mkdir -p "$ROOT/dist"
 
