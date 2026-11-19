@@ -108,7 +108,7 @@ if (-not (Test-Path (Join-Path $Root "third_party/JUCE/CMakeLists.txt"))) {
 }
 $BuildDir = Join-Path $Root "vst3/build-windows"
 Invoke-Checked "cmake" @("-S", (Join-Path $Root "vst3"), "-B", $BuildDir,
-    "-G", "Visual Studio 17 2022", "-A", "x64", "-DCMAKE_BUILD_TYPE=Release")
+    "-DCMAKE_BUILD_TYPE=Release")
 Invoke-Checked "cmake" @("--build", $BuildDir, "--config", "Release", "--parallel")
 
 $Bundle = Join-Path $BuildDir "BytebeatMachine_artefacts/Release/VST3/$MachineName.vst3"
@@ -128,7 +128,7 @@ Write-Host ""
 Write-Host "== Bytebeat Drums VST3 =="
 $DrumsBuildDir = Join-Path $Root "drums/vst3/build-windows"
 Invoke-Checked "cmake" @("-S", (Join-Path $Root "drums/vst3"), "-B", $DrumsBuildDir,
-    "-G", "Visual Studio 17 2022", "-A", "x64", "-DCMAKE_BUILD_TYPE=Release")
+    "-DCMAKE_BUILD_TYPE=Release")
 Invoke-Checked "cmake" @("--build", $DrumsBuildDir, "--config", "Release", "--parallel")
 
 $DrumsBundle = Join-Path $DrumsBuildDir "BytebeatDrums_artefacts/Release/VST3/$DrumsName.vst3"

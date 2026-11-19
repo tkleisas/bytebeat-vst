@@ -244,7 +244,7 @@ python3 tools/build.py "plugins/Bytebeat Drums" --target desktop
 ### Windows
 
 `build.ps1` performs the same steps with the SDK for both plugins and builds
-both VST3s with Visual Studio 2022 + CMake. It is also what the GitHub Actions
+both VST3s with the installed Visual Studio + CMake. It is also what the GitHub Actions
 Windows job uses, so Windows VST2/VST3 builds are produced on every push
 without a local Windows machine.
 

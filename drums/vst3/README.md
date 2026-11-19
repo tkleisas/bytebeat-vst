@@ -23,10 +23,10 @@ cmake --build drums/vst3/build -j"$(nproc)"
 `~/.vst3/Bytebeat Drums.vst3`; the built bundle is also at
 `drums/vst3/build/BytebeatDrums_artefacts/Release/VST3/Bytebeat Drums.vst3`.
 
-On Windows, use the same project with Visual Studio 2022:
+On Windows, use the same project with the installed Visual Studio (CMake picks the default generator):
 
 ```powershell
-cmake -S drums/vst3 -B drums/vst3/build-windows -G "Visual Studio 17 2022" -A x64
+cmake -S drums/vst3 -B drums/vst3/build-windows
 cmake --build drums/vst3/build-windows --config Release
 ```
 
