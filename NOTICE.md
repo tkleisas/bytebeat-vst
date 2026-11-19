@@ -7,13 +7,12 @@ The MPC build is made with the **inMusic MPC Plugin Builder SDK**, which is
 MIT-licensed. Its licence text is in `LICENSES/MPC-Plugin-SDK-MIT.txt` and is
 shipped with the plugin in `Content/THIRD_PARTY_LICENSES.txt`.
 
-The desktop VST3 build uses **JUCE 7.0.12** and the VST3 SDK bundled with JUCE.
-It also includes **QuickJS-NG** (MIT) for the optional JavaScript engine; its
-licence is in `LICENSES/QuickJS-NG-MIT.txt`.
-JUCE is GPLv3 (or commercial); the VST3 SDK is dual-licensed by Steinberg.
-Bytebeat Machine is distributed under GPL-3.0-or-later, which is compatible with
-JUCE's GPLv3 terms. The plugin contains no Steinberg VST SDK code in its VST2
-build.
+The desktop VST3 builds use **JUCE 7.0.12** and the VST3 SDK bundled with JUCE.
+Bytebeat Machine also includes **QuickJS-NG** (MIT) for the optional JavaScript
+engine; its licence is in `LICENSES/QuickJS-NG-MIT.txt`. JUCE is GPLv3 (or
+commercial); the VST3 SDK is dual-licensed by Steinberg. Both plugins are
+distributed under GPL-3.0-or-later, which is compatible with JUCE's GPLv3
+terms. The VST2 builds contain no Steinberg VST SDK code.
 
 "DSP" here means the bytebeat compiler, virtual machine and engine in
 `mpc/src/Bytebeat*.h`. Those files are original work; no third-party bytebeat

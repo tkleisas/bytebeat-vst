@@ -4,6 +4,7 @@
 
 #include "BytebeatCompile.h"
 #include "BytebeatEngine.h"
+#include "DrumKits.h"
 #include "FormulaLibrary.h"
 
 #include <cmath>
@@ -318,6 +319,46 @@ static void testEngine()
     CHECK_NEAR(c[0], first, 1e-6);
 }
 
+static void testDrumKits()
+{
+    int count = 0;
+    const bbdrums::KitSpec* kits = bbdrums::factoryKits(count);
+    CHECK(count == 6);
+    CHECK(bbdrums::kPads == 16);
+
+    const auto& builtins = builtinFormulas();
+    for (int k = 0; k < count; ++k)
+    {
+        const auto& kit = kits[k];
+        CHECK(kit.name != nullptr && kit.name[0] != '\0');
+        CHECK(kit.pads != nullptr);
+        CHECK(kit.masterVolume >= -40.0f && kit.masterVolume <= 6.0f);
+        CHECK(kit.tone >= 0.0f && kit.tone <= 100.0f);
+        CHECK(kit.drive >= 0.0f && kit.drive <= 100.0f);
+
+        for (int p = 0; p < bbdrums::kPads; ++p)
+        {
+            const auto& pad = kit.pads[p];
+            CHECK(pad.formula >= 0 && pad.formula < (int)builtins.size());
+            if (pad.formula >= 0 && pad.formula < (int)builtins.size())
+            {
+                const auto result = compile(builtins[(size_t)pad.formula].source);
+                CHECK(result.ok);
+            }
+            CHECK(pad.level >= 0.0f && pad.level <= 100.0f);
+            CHECK(pad.pan >= -100.0f && pad.pan <= 100.0f);
+            CHECK(pad.tune >= -24.0f && pad.tune <= 24.0f);
+            CHECK(pad.decay >= 10.0f && pad.decay <= 4000.0f);
+            CHECK(pad.choke >= 0 && pad.choke <= 4);
+            CHECK(pad.mode == 0 || pad.mode == 1);
+            CHECK(pad.a >= 0.0f && pad.a <= 100.0f);
+            CHECK(pad.b >= 0.0f && pad.b <= 100.0f);
+            CHECK(pad.c >= 0.0f && pad.c <= 100.0f);
+            CHECK(pad.d >= 0.0f && pad.d <= 100.0f);
+        }
+    }
+}
+
 int main()
 {
     testPrecedence();
@@ -329,6 +370,7 @@ int main()
     testMeta();
     testErrors();
     testBuiltins();
+    testDrumKits();
     testEngine();
 
     std::printf("%d checks, %d failure(s)\n", g_checks, g_failures);

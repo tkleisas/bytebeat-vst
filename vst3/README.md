@@ -4,6 +4,8 @@ The desktop VST3 with the formula editor, library and scope. It uses the same
 engine as the MPC plugin (`../mpc/src/Bytebeat*.h`); the only JUCE-specific
 parts are the processor wrapper and the editor.
 
+Bytebeat Drums has a separate VST3 in [`../drums/vst3`](../drums/vst3/README.md).
+
 ## Build
 
 Requirements: CMake ≥ 3.22, a C++17 compiler, X11/freetype development files

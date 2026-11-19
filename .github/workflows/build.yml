@@ -40,8 +40,10 @@ jobs:
           ZIG: python
         run: ./build.sh
 
-      - name: JavaScript engine tests
-        run: ctest --test-dir vst3/build --output-on-failure
+      - name: VST3 tests
+        run: |
+          ctest --test-dir vst3/build --output-on-failure
+          ctest --test-dir drums/vst3/build --output-on-failure
 
       - uses: actions/upload-artifact@v4
         with:
@@ -74,8 +76,10 @@ jobs:
           ZIG: python
         run: ./build.ps1
 
-      - name: JavaScript engine tests
-        run: ctest --test-dir vst3/build-windows -C Release --output-on-failure
+      - name: VST3 tests
+        run: |
+          ctest --test-dir vst3/build-windows -C Release --output-on-failure
+          ctest --test-dir drums/vst3/build-windows -C Release --output-on-failure
 
       - uses: actions/upload-artifact@v4
         with:

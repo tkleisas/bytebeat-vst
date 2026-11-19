@@ -13,6 +13,7 @@
 #include "dsp/math.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -33,6 +34,7 @@
 
 #include "BytebeatCompile.h"
 #include "BytebeatEngine.h"
+#include "DrumKits.h"
 #include "FormulaLibrary.h"
 
 namespace
@@ -41,7 +43,7 @@ namespace
 constexpr int kPads = 16;
 constexpr int kPadFields = 11;
 constexpr int kPadBase = 5;
-constexpr int kNumParams = kPadBase + kPads * kPadFields;
+constexpr int kNumParams = kPadBase + kPads * kPadFields + 3;
 constexpr int kMaxUserFormulas = 32;
 constexpr int kMaxNameLength = 64;
 constexpr int kTempBlock = 8192;
@@ -72,7 +74,10 @@ enum ParamIndex
     kMasterVolume,
     kMasterTone,
     kMasterDrive,
-    kNoteBase
+    kNoteBase,
+    kKit = kPadBase + kPads * kPadFields,
+    kKitLoad,
+    kKitSave
 };
 
 struct FormulaEntry
@@ -146,25 +151,6 @@ void listUserFormulaFiles(std::vector<std::string>& files)
         files.resize((size_t)kMaxUserFormulas);
 }
 
-struct PadSpec
-{
-    int formula;
-    float level;
-    float pan;
-    float tune;
-    float decay;
-    int choke;
-    int mode;
-    float a, b, c, d;
-};
-
-PadSpec spec(int formula, float level, float pan, float tune, float decay,
-             int choke, int mode, float a = 50.0f, float b = 50.0f,
-             float c = 50.0f, float d = 50.0f)
-{
-    return { formula, level, pan, tune, decay, choke, mode, a, b, c, d };
-}
-
 } // namespace
 
 class BytebeatDrums : public mpc::Plugin
@@ -235,10 +221,19 @@ public:
             addParam(floatParam(id, name, 0.0f, 100.0f, 50.0f, "%", 0));
         }
 
+        addParam(choiceParam("kit", "Kit",
+                             { "Init", "Bytebeat", "Metal", "Acid", "Ambient", "Glitch",
+                               "User 1", "User 2", "User 3", "User 4" }, 0));
+        addParam(boolParam("kit_load", "Load Kit", false));
+        addParam(boolParam("kit_save", "Save Kit", false));
+
         if (numParams() != kNumParams)
             mpc::log("BytebeatDrums: parameter count mismatch (%d vs %d)", numParams(), (int)kNumParams);
 
         addFactoryKits();
+
+        // Start on the Init kit so the default sound matches the Kit menu.
+        applyKit(0);
     }
 
     void prepare(double sampleRate, int maxBlockSize) override
@@ -269,6 +264,8 @@ public:
             pad.choking = false;
             pad.oneShot = false;
         }
+        lastKitLoad_ = getBool(kKitLoad);
+        lastKitSave_ = getBool(kKitSave);
     }
 
     void process(mpc::ProcessContext& ctx) override
@@ -279,6 +276,8 @@ public:
         if (ctx.numFrames > kTempBlock) return; // the MPC never asks for this much
 
         const int n = ctx.numFrames;
+
+        handleKitActions();
 
         for (int p = 0; p < kPads; ++p)
             pads_[p].engine.setSettings(makePadSettings(p));
@@ -638,7 +637,7 @@ private:
         return v;
     }
 
-    void setPad(std::vector<float>& v, int pad, const PadSpec& s)
+    void setPad(std::vector<float>& v, int pad, const bbdrums::PadSpec& s)
     {
         v[(size_t)padParam(pad, kFormula)] = (float)s.formula;
         v[(size_t)padParam(pad, kLevel)]   = s.level;
@@ -653,144 +652,135 @@ private:
         v[(size_t)padParam(pad, kMacroD)]  = s.d;
     }
 
-    void addKit(const char* name, const PadSpec (&specs)[kPads],
-                float masterVolume = -12.0f, float tone = 100.0f, float drive = 0.0f)
+    void addKit(const bbdrums::KitSpec& kit)
     {
         auto v = defaults();
-        v[(size_t)kMasterVolume] = masterVolume;
-        v[(size_t)kMasterTone] = tone;
-        v[(size_t)kMasterDrive] = drive;
+        v[(size_t)kMasterVolume] = kit.masterVolume;
+        v[(size_t)kMasterTone] = kit.tone;
+        v[(size_t)kMasterDrive] = kit.drive;
+        v[(size_t)kKit] = (float)factoryKits_.size();
         for (int p = 0; p < kPads; ++p)
-            setPad(v, p, specs[p]);
-        addProgram(name, std::move(v));
+            setPad(v, p, kit.pads[p]);
+
+        factoryKits_.push_back(v);
+        addProgram(kit.name, std::move(v));
     }
 
     void addFactoryKits()
     {
-        const PadSpec init[kPads] = {
-            spec(0,  85, -20,   0, 250, 0, 0),
-            spec(3,  75,  20,   0, 180, 1, 0),
-            spec(1,  80,   0,   0, 300, 0, 0),
-            spec(8,  65,  30,   0, 120, 2, 0),
-            spec(5,  80, -30,   0, 320, 1, 0),
-            spec(6,  75,  40,   0, 220, 2, 0),
-            spec(7,  70, -40,   0, 260, 0, 0),
-            spec(10, 65,   0,   0, 140, 2, 0),
-            spec(11, 70, -25,   0, 400, 0, 0),
-            spec(13, 75,   0, -12, 450, 0, 0),
-            spec(14, 70,  25,   0, 350, 0, 0),
-            spec(15, 60,   0,   0, 400, 0, 0),
-            spec(21, 65, -15,   0, 300, 1, 0),
-            spec(22, 65,  15,   0, 300, 1, 0),
-            spec(23, 60,   0,   0, 200, 2, 0),
-            spec(9,  60,   0,   0, 250, 2, 0),
-        };
-        addKit("Init", init);
+        int count = 0;
+        const bbdrums::KitSpec* kits = bbdrums::factoryKits(count);
+        for (int i = 0; i < count; ++i)
+            addKit(kits[i]);
 
-        const PadSpec bytebeat[kPads] = {
-            spec(0,  85, -10,   0, 180, 0, 0, 35, 70),
-            spec(4,  75,  15,   0, 220, 1, 0, 60, 40),
-            spec(2,  80,   0,   0, 250, 0, 0),
-            spec(3,  70,  25,   0, 150, 2, 0),
-            spec(1,  75, -25,   0, 300, 0, 0),
-            spec(5,  70,  10,   0, 260, 1, 0),
-            spec(6,  65,  35,   0, 190, 2, 0),
-            spec(7,  65, -35,   0, 240, 0, 0),
-            spec(10, 60,   0,   0, 160, 2, 0),
-            spec(8,  65,  20,   0, 140, 2, 0),
-            spec(9,  60, -20,   0, 220, 1, 0),
-            spec(20, 60,  30,   0, 280, 0, 0),
-            spec(19, 60, -30,   0, 320, 0, 0),
-            spec(12, 60,   0,   0, 300, 0, 0),
-            spec(16, 55,  15,   0, 400, 0, 1),
-            spec(17, 55, -15,   0, 400, 0, 1),
-        };
-        addKit("Bytebeat Kit", bytebeat, -12.0f, 95.0f, 15.0f);
+        // Start all four user slots from the Init kit so Load always has
+        // something useful before the user saves their own kit.
+        if (!factoryKits_.empty())
+        {
+            for (auto& user : userKits_)
+                for (int i = 0; i < (int)kKit; ++i)
+                    user[(size_t)i].store(factoryKits_[0][(size_t)i], std::memory_order_relaxed);
+        }
+    }
 
-        const PadSpec metal[kPads] = {
-            spec(6,  85,   0,   0, 140, 0, 0),
-            spec(9,  75, -20,   0, 110, 1, 0),
-            spec(8,  75,  20,   0, 160, 2, 0),
-            spec(10, 70,   0,   0, 120, 2, 0),
-            spec(5,  75, -30,   0, 180, 1, 0),
-            spec(3,  70,  30,   0, 150, 1, 0),
-            spec(2,  65,   0,   0, 200, 0, 0),
-            spec(7,  65,  40,   0, 220, 0, 0),
-            spec(23, 65, -40,   0, 180, 2, 0),
-            spec(9,  60,   0,   0, 100, 2, 0),
-            spec(22, 60,  20,   0, 200, 1, 0),
-            spec(21, 60, -20,   0, 220, 1, 0),
-            spec(11, 55,   0,   0, 300, 0, 1),
-            spec(14, 55,  20,   0, 280, 0, 0),
-            spec(18, 50,   0,   0, 350, 0, 1),
-            spec(15, 50,   0,   0, 320, 0, 0),
-        };
-        addKit("Metal Kit", metal, -14.0f, 75.0f, 30.0f);
+    void handleKitActions()
+    {
+        const bool load = getBool(kKitLoad);
+        if (load && !lastKitLoad_)
+            applyKit(getInt(kKit));
+        lastKitLoad_ = load;
 
-        const PadSpec acid[kPads] = {
-            spec(4,  85,   0,   0, 220, 0, 0, 20, 80),
-            spec(14, 75, -20,   0, 260, 0, 0),
-            spec(13, 75,  20, -12, 300, 0, 0),
-            spec(19, 70,   0,   0, 280, 0, 0),
-            spec(22, 70, -30,   0, 240, 0, 0, 60, 30),
-            spec(21, 65,  30,   0, 260, 0, 1),
-            spec(11, 65,   0,   0, 400, 0, 1),
-            spec(12, 60,  15,   0, 350, 0, 1),
-            spec(3,  70, -15,   0, 180, 1, 0),
-            spec(8,  65,   0,   0, 160, 2, 0),
-            spec(6,  60,  20,   0, 200, 2, 0),
-            spec(23, 60, -20,   0, 180, 2, 0),
-            spec(1,  60,   0,   0, 300, 0, 0),
-            spec(5,  55,  25,   0, 320, 0, 0),
-            spec(7,  55, -25,   0, 300, 0, 0),
-            spec(9,  55,   0,   0, 240, 0, 0),
-        };
-        addKit("Acid Kit", acid, -12.0f, 85.0f, 25.0f);
+        const bool save = getBool(kKitSave);
+        if (save && !lastKitSave_)
+            saveKit();
+        lastKitSave_ = save;
+    }
 
-        const PadSpec ambient[kPads] = {
-            spec(11, 70, -30,   0, 1800, 0, 1),
-            spec(14, 65,  30,   0, 1400, 0, 1),
-            spec(12, 65, -15,   0, 2000, 0, 1),
-            spec(13, 70,  15, -12, 1600, 0, 1),
-            spec(15, 60, -35,   0, 2200, 0, 1),
-            spec(16, 60,  35,   0, 2000, 0, 1),
-            spec(18, 55,   0,   0, 2400, 0, 1),
-            spec(17, 55,  20,   0, 2200, 0, 1),
-            spec(5,  60, -25,   0, 1200, 0, 1),
-            spec(7,  55,  25,   0, 1000, 0, 1),
-            spec(1,  60,   0,   0, 800, 0, 0),
-            spec(0,  55,   0,   0, 900, 0, 0),
-            spec(11, 55, -20,   0, 1500, 0, 1),
-            spec(14, 50,  20,   0, 1200, 0, 1),
-            spec(13, 55,   0, -12, 1800, 0, 1),
-            spec(19, 50,   0,   0, 1000, 0, 0),
-        };
-        addKit("Ambient Kit", ambient, -14.0f, 80.0f, 0.0f);
+    void applyKit(int index)
+    {
+        // Real-time path: read the preallocated kit and write parameter
+        // atomics. No allocation and no locks.
+        if (index >= 0 && index < (int)factoryKits_.size())
+        {
+            const auto& values = factoryKits_[(size_t)index];
+            const int count = std::min((int)values.size(), (int)kKit);
+            for (int i = 0; i < count; ++i)
+                set(i, values[(size_t)i]);
+        }
+        else if (index >= 6 && index < 10)
+        {
+            const auto& values = userKits_[(size_t)(index - 6)];
+            for (int i = 0; i < (int)kKit; ++i)
+                set(i, values[(size_t)i].load(std::memory_order_relaxed));
+        }
+    }
 
-        const PadSpec glitch[kPads] = {
-            spec(10, 80,   0,   0, 100, 0, 0),
-            spec(8,  75, -20,   0, 80, 1, 0),
-            spec(2,  75,  20,   0, 120, 0, 0),
-            spec(7,  70,   0,   0, 100, 2, 0),
-            spec(23, 70, -30,   0, 90, 2, 0),
-            spec(9,  65,  30,   0, 110, 1, 0),
-            spec(3,  65,   0,   0, 130, 0, 0),
-            spec(6,  60,  20,   0, 140, 2, 0),
-            spec(20, 60, -20,   0, 160, 0, 0),
-            spec(21, 55,   0,   0, 120, 1, 0),
-            spec(22, 55,  25,   0, 110, 1, 0),
-            spec(1,  55, -25,   0, 150, 0, 0),
-            spec(5,  50,   0,   0, 180, 0, 0),
-            spec(4,  50,  20,   0, 160, 0, 0),
-            spec(11, 50, -20,   0, 200, 0, 1),
-            spec(12, 45,   0,   0, 180, 0, 1),
-        };
-        addKit("Glitch Kit", glitch, -14.0f, 90.0f, 15.0f);
+    void saveKit()
+    {
+        const int selected = getInt(kKit);
+        const int slot = (selected >= 6 && selected <= 9) ? selected - 6 : 0;
+
+        for (int i = 0; i < (int)kKit; ++i)
+            userKits_[(size_t)slot][(size_t)i].store(get(i), std::memory_order_relaxed);
+
+        if (selected < 6 || selected > 9)
+            set(kKit, 6.0f); // reveal the slot that just received the sound
+    }
+
+    void saveExtraState(std::vector<uint8_t>& out) override
+    {
+        constexpr int n = (int)kKit; // params 0..180, excluding kit/action params
+        const size_t base = out.size();
+        const size_t total = 8 + (size_t)n * 4u * 4u;
+        out.resize(base + total);
+        uint8_t* p = out.data() + base;
+        std::memcpy(p, "BDK1", 4);
+        p[4] = 1; p[5] = 0; p[6] = 0; p[7] = 0;
+
+        size_t off = 8;
+        for (int u = 0; u < 4; ++u)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                const float v = userKits_[(size_t)u][(size_t)i].load(std::memory_order_relaxed);
+                uint32_t bits = 0;
+                std::memcpy(&bits, &v, 4);
+                p[off++] = (uint8_t)(bits & 0xff);
+                p[off++] = (uint8_t)((bits >> 8) & 0xff);
+                p[off++] = (uint8_t)((bits >> 16) & 0xff);
+                p[off++] = (uint8_t)((bits >> 24) & 0xff);
+            }
+        }
+    }
+
+    void loadExtraState(const uint8_t* data, size_t size) override
+    {
+        constexpr int n = (int)kKit;
+        if (data == nullptr || size < 8 + (size_t)n * 4u * 4u) return;
+        if (std::memcmp(data, "BDK1", 4) != 0 || data[4] != 1) return;
+
+        size_t off = 8;
+        for (int u = 0; u < 4; ++u)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                const uint32_t bits = (uint32_t)data[off] | ((uint32_t)data[off + 1] << 8)
+                                    | ((uint32_t)data[off + 2] << 16) | ((uint32_t)data[off + 3] << 24);
+                off += 4;
+                float v = 0.0f;
+                std::memcpy(&v, &bits, 4);
+                userKits_[(size_t)u][(size_t)i].store(v, std::memory_order_relaxed);
+            }
+        }
     }
 
     std::vector<FormulaEntry> bank_;
     std::vector<std::string> formulaNames_;
     FormulaEntry fallback_;
+    std::vector<std::vector<float>> factoryKits_;
+    std::array<std::array<std::atomic<float>, (size_t)kKit>, 4> userKits_ {};
+    bool lastKitLoad_ = false;
+    bool lastKitSave_ = false;
     Pad pads_[kPads];
     std::vector<float> tempL_;
     std::vector<float> tempR_;

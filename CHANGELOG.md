@@ -2,7 +2,8 @@
 
 ## Bytebeat Drums 0.1.0
 
-- New 16-pad bytebeat drum instrument for MPC OS 3.10.1+ and desktop VST2.
+- New 16-pad bytebeat drum instrument for MPC OS 3.10.1+, desktop VST2 and
+  Linux/Windows VST3.
 - Per-pad formula from the built-in bank or user `.bb` files, level, pan,
   ±24 semitone tune, decay, choke group, One-shot/Hold mode and macros A–D.
 - MIDI notes 36–51 by default, with a Note Base master parameter.
@@ -10,7 +11,12 @@
 - 5 ms choke fade, cross-pad choke groups, all-notes-off panic.
 - Six factory kits: Init, Bytebeat Kit, Metal Kit, Acid Kit, Ambient Kit,
   Glitch Kit.
-- 13-tab MPC UI and 181 parameters; shared native bytebeat core.
+- 14-tab MPC UI and 184 parameters (181 pad/master + kit browser actions).
+- KIT page: factory/user kit browser with four user kit slots stored in the
+  project state; Load Kit / Save Kit switches.
+- Linux/Windows VST3 with a 4×4 pad grid, per-pad formula and controls, master
+  section, kit browser with four user slots, and a preview scope.
+- Shared factory kit definitions (`DrumKits.h`) and shared native bytebeat core.
 - Shared engine gained an optional one-shot gate (`oneShotSamples`) and
   `hasActiveVoices()`.
 

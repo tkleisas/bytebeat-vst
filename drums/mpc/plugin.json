@@ -10,7 +10,7 @@
   "category": "Drums",
   "file32": "VST/bytebeat-drums-arm32.so",
   "file64": "VST/bytebeat-drums-arm64.so",
-  "description": "16-pad bytebeat drum instrument. Every pad has its own bytebeat/signed/floatbeat formula, level, pan, tune, decay, choke group, one-shot/hold mode and four macros. MIDI notes 36-51 trigger the pads; the MPC sequencer provides the patterns. Built for MPC OS 3.10.1+ and desktop VST2 hosts.",
+  "description": "16-pad bytebeat drum instrument. Every pad has its own bytebeat/signed/floatbeat formula, level, pan, tune, decay, choke group, one-shot/Hold mode and four macros. MIDI notes 36-51 trigger the pads; the MPC sequencer provides the patterns. Six factory kits and four user kit slots are included. Built for MPC OS 3.10.1+ and desktop VST2 hosts.",
   "author": "bokontep",
   "url": "https://github.com/tkleisas/bytebeat-vst",
   "license": "GPL-3.0-or-later"

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(BYTEBEAT_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../mpc/src")
+set(DRUM_SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../drums/mpc/src")
 
 function(bytebeat_warnings target)
     if(MSVC)
@@ -17,7 +18,7 @@ function(bytebeat_warnings target)
 endfunction()
 
 add_executable(core_tests core_tests.cpp)
-target_include_directories(core_tests PRIVATE "${BYTEBEAT_CORE_DIR}")
+target_include_directories(core_tests PRIVATE "${BYTEBEAT_CORE_DIR}" "${DRUM_SHARED_DIR}")
 bytebeat_warnings(core_tests)
 
 add_executable(bbtool bbtool.cpp)

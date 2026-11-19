@@ -846,6 +846,49 @@
       ]
     },
     {
+      "name": "KIT",
+      "controls": [
+        {
+          "param": "Kit",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "Load Kit",
+          "widget": "switch"
+        },
+        {
+          "param": "Save Kit",
+          "widget": "switch"
+        },
+        {
+          "widget": "text",
+          "text": "KIT BROWSER"
+        },
+        {
+          "widget": "text",
+          "text": "LOAD: SELECT + LOAD"
+        },
+        {
+          "widget": "text",
+          "text": "SAVE: USER 1-4 + SAVE"
+        },
+        {
+          "widget": "text",
+          "text": "USER KITS IN PROJECT"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
       "name": "MASTER",
       "controls": [
         {

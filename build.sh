@@ -131,6 +131,21 @@ if [ "${SKIP_VST3:-0}" != "1" ] && [ -f "$ROOT/vst3/CMakeLists.txt" ]; then
     ( cd "$ROOT/dist" && rm -f "$MACHINE_SLUG-$MACHINE_VERSION-linux-vst3.zip" \
         && zip -qr "$MACHINE_SLUG-$MACHINE_VERSION-linux-vst3.zip" "$MACHINE_NAME.vst3" LICENSE NOTICE.md \
         && zip -qj "$MACHINE_SLUG-$MACHINE_VERSION-linux-vst3.zip" "$ROOT/LICENSES/QuickJS-NG-MIT.txt" )
+
+    echo
+    echo "== Bytebeat Drums VST3 =="
+    cmake -S "$ROOT/drums/vst3" -B "$ROOT/drums/vst3/build" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$ROOT/drums/vst3/build" -j"$(nproc)"
+
+    DRUMS_VST3_BUNDLE="$ROOT/drums/vst3/build/BytebeatDrums_artefacts/Release/VST3/$DRUMS_NAME.vst3"
+    if [ ! -d "$DRUMS_VST3_BUNDLE" ]; then
+        echo "error: drum VST3 bundle not found at $DRUMS_VST3_BUNDLE" >&2
+        exit 1
+    fi
+    rm -rf "$ROOT/dist/$DRUMS_NAME.vst3"
+    cp -a "$DRUMS_VST3_BUNDLE" "$ROOT/dist/"
+    ( cd "$ROOT/dist" && rm -f "$DRUMS_SLUG-$DRUMS_VERSION-linux-vst3.zip" \
+        && zip -qr "$DRUMS_SLUG-$DRUMS_VERSION-linux-vst3.zip" "$DRUMS_NAME.vst3" LICENSE NOTICE.md )
 fi
 
 echo

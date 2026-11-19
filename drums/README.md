@@ -1,8 +1,8 @@
 # Bytebeat Drums
 
-A 16-pad bytebeat drum instrument for Akai MPC OS 3.10.1+ and desktop VST2
-hosts. It is a separate plugin from **Bytebeat Machine** and shares the same
-formula compiler, VM and one-voice engine.
+A 16-pad bytebeat drum instrument for Akai MPC OS 3.10.1+, desktop VST2 hosts
+and Linux/Windows VST3 hosts. It is a separate plugin from **Bytebeat
+Machine** and shares the same formula compiler, VM and one-voice engine.
 
 Every pad has its own formula, level, pan, tune, decay, choke group, play mode
 and four macro controls. MIDI notes (default **36–51**) trigger the pads; the
@@ -37,19 +37,42 @@ quickly when a pad in its choke group triggers.
 
 ## UI pages
 
-The MPC UI has thirteen tabs:
+The MPC UI has fourteen tabs:
 
 - **P1-4 F / P5-8 F / P9-12 F / P13-16 F** — formula, level, pan and tune for
   four pads. The four knobs in each column belong to one pad, so the Q-Link
   column is a pad's control set.
 - **P1-4 E / P5-8 E / P9-12 E / P13-16 E** — decay, choke, mode and macro A.
 - **P1-4 M / P5-8 M / P9-12 M / P13-16 M** — macros B, C and D.
+- **KIT** — factory/user kit browser: select a kit and tap **Load Kit**, or
+  select **User 1–4** and tap **Save Kit** to capture the current 181 pad/master
+  parameters into that slot. User kits are saved in the MPC project state.
 - **MASTER** — master volume, tone, drive, note base, status and the kit
   information text.
 
 The formula knobs open a menu of the built-in bank plus the `.bb` files in
 `Content/Formulas/`. The choke knobs open the group menu; mode is a two-way
 switch.
+
+## VST3 editor
+
+The desktop VST3 is the same 16-pad instrument with a graphical editor:
+
+- **4×4 pad grid** — click a pad to select it and hear a short preview. Each
+  cell shows the pad number, formula name and level.
+- **Pad panel** — formula menu, level, pan, tune, decay, choke, mode and macros
+  A–D for the selected pad.
+- **Master panel** — volume, tone, drive and note base.
+- **Kit browser** — the six factory kits plus four user slots. **Load** commits
+  the selected kit; **Save** captures the current 16 pads and master settings
+  into the selected user slot (a factory selection saves to User 1).
+- **Preview scope** — renders the selected pad, so it works without a host
+  transport.
+- **Folder** — opens the user formula folder. Add `.bb` files there and reopen
+  the editor/plugin to rescan them.
+
+User kits are stored in the VST3 project state. The factory kits are defined
+in `mpc/src/DrumKits.h` and shared by the MPC and VST3 builds.
 
 ## Kits
 
@@ -65,7 +88,11 @@ Factory programs:
 | Glitch Kit | Very short digital/noise bursts and chokes. |
 
 Kits are normal MPC programs. The host's program browser changes all 181
-parameters at once. Save your own kits as MPC programs/projects.
+parameters at once. You can also use the KIT page without the program browser:
+select a factory or user kit and tap **Load Kit**. To save the current sound,
+select **User 1–4** in the Kit menu and tap **Save Kit**; the four user slots
+are stored in the project state. (If a factory kit is selected when you tap
+Save, the sound is saved to User 1 and the menu switches there.)
 
 ## Formulas
 
@@ -98,7 +125,10 @@ The drum release assets are:
 ```
 dist/bytebeat-drums-0.1.0-mpc.zip
 dist/bytebeat-drums-0.1.0-linux-vst2.zip
+dist/bytebeat-drums-0.1.0-linux-vst3.zip
 ```
+
+`build.ps1` produces the corresponding Windows VST2/VST3 zips.
 
 For the MPC, copy `bokontep - VST - Bytebeat Drums` into `VST2 Plugins` on the
 drive and enable **External Plugin Support** in **Preferences → Enhancements
@@ -106,7 +136,7 @@ drive and enable **External Plugin Support** in **Preferences → Enhancements
 factory formulas and the licences.
 
 The desktop VST2 is a generic-parameter build for testing and automation; the
-MPC scripted UI is the primary interface.
+MPC scripted UI and the VST3 editor are the primary interfaces.
 
 ### Manual SDK build
 
@@ -132,8 +162,7 @@ about 0.3 % of one block. Dense pads or high formula rates use more, and you can
 shorten decays or use fewer simultaneous pads if needed.
 
 The drum plugin does not include the QuickJS engine; it always uses the native
-VM. There is no drum VST3 yet — the MPC / desktop VST2 builds are the first
-release.
+VM in the MPC, VST2 and VST3 builds.
 
 ## Licence
 

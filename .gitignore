@@ -3,6 +3,8 @@
 dist/
 vst3/build/
 vst3/build-windows/
+drums/vst3/build/
+drums/vst3/build-windows/
 tests/build/
 build-desktop/
 *.vst3

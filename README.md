@@ -6,7 +6,8 @@ Two instruments built around the same bytebeat compiler, VM and engine:
   free/sync/trigger play modes, 1–8 voices, user `.bb` files and MPC/desktop
   builds.
 - **Bytebeat Drums** — 16 pads, each with its own formula, level, pan, tune,
-  decay, choke group, play mode and four macros; MPC/desktop VST2.
+  decay, choke group, play mode and four macros; MPC/desktop VST2 and
+  Linux/Windows VST3.
 
 ## Bytebeat Machine
 
@@ -69,7 +70,8 @@ affiliated with or endorsed by them.
 
 ## Bytebeat Drums
 
-A separate 16-pad drum instrument, MPC-first and also built as a desktop VST2:
+A separate 16-pad drum instrument, MPC-first and also built as a desktop VST2
+and Linux/Windows VST3:
 
 - **16 pads**, default MIDI notes 36–51 (the MPC's bank A). A **Note Base**
   master parameter shifts the mapping.
@@ -80,9 +82,13 @@ A separate 16-pad drum instrument, MPC-first and also built as a desktop VST2:
   until note-off. Choke groups fade the previous pad out in 5 ms.
 - **Six factory kits**: Init, Bytebeat Kit, Metal Kit, Acid Kit, Ambient Kit and
   Glitch Kit.
-- **13 MPC UI tabs**: three pages per bank of four pads (formula/level/pan/tune,
-  decay/choke/mode/A, macros B/C/D) plus a MASTER page. Each Q-Link column is one
-  pad's four controls.
+- **14 MPC UI tabs**: three pages per bank of four pads (formula/level/pan/tune,
+  decay/choke/mode/A, macros B/C/D), a KIT page with factory/user kit browser
+  and four project-stored user slots, and a MASTER page. Each Q-Link column is
+  one pad's four controls.
+- **VST3 editor**: 4×4 pad grid, per-pad formula menu and controls, master
+  section, kit browser with Load/Save to four user slots, and a preview scope.
+  The VST3 shares the factory kits with the MPC build.
 - Uses the same native bytebeat VM as Bytebeat Machine; no QuickJS, no
   internal step sequencer (the MPC sequencer supplies patterns).
 
@@ -100,9 +106,11 @@ mpc/                    Bytebeat Machine: MPC + desktop VST2 plugin
   src/FormulaLibrary.h  built-in formulas
   Content/Formulas/     example .bb files and the user-formula README
   plugin.json, ui.json
-drums/                  Bytebeat Drums: MPC + desktop VST2 plugin
+drums/                  Bytebeat Drums: MPC + desktop VST2 + VST3
   mpc/src/BytebeatDrums.cpp  16-pad engine, params, kits
+  mpc/src/DrumKits.h         factory kits shared with the VST3
   mpc/Content/Formulas/      example .bb files
+  vst3/                 Bytebeat Drums JUCE VST3 (Linux + Windows)
   README.md             pad map, UI, kits, build notes
 vst3/                   Bytebeat Machine JUCE VST3 (Linux + Windows)
   Source/PluginProcessor.*, PluginEditor.*, ...
@@ -148,11 +156,12 @@ turn **User Bank** on and step **User Slot**; the value text shows the file
 name. User files are scanned from `Content/Formulas/` when the plugin loads, so
 add files and reload the plugin (or restart the MPC app) after changing them.
 
-**Bytebeat Drums** has 13 tabs: three pages for each bank of four pads, plus
-MASTER. Pads 1–16 default to MIDI notes 36–51; play them from the hardware pads
-or the sequencer. Choose each pad's formula on its `P… F` page; select the pad
-bank's envelope/macro pages for decay, choke, mode and A–D. See
-[`drums/README.md`](drums/README.md) for the full mapping.
+**Bytebeat Drums** has 14 tabs: three pages for each bank of four pads, plus a
+KIT page and MASTER. Pads 1–16 default to MIDI notes 36–51; play them from the
+hardware pads or the sequencer. Choose each pad's formula on its `P… F` page;
+select the pad bank's envelope/macro pages for decay, choke, mode and A–D. The
+KIT page loads factory/user kits and saves the current sound into User 1–4
+(project state). See [`drums/README.md`](drums/README.md) for the full mapping.
 
 ### User formulas on the MPC
 
@@ -179,7 +188,7 @@ full directive list.
 Requirements: Python 3.9+, Git, CMake ≥ 3.22, a C++17 compiler, X11/freetype
 development files, `zip`, and network access on the first build. About 2 GB of
 free disk space. `build.sh` builds both Bytebeat Machine and Bytebeat Drums,
-plus the Bytebeat Machine VST3.
+including their Linux VST3s.
 
 ```bash
 git clone --recursive https://github.com/tkleisas/bytebeat-vst.git
@@ -189,8 +198,8 @@ cd bytebeat-vst
 
 `build.sh` clones the pinned MPC Plugin SDK, copies `mpc/` and `drums/mpc/`
 into it, builds both plugins' native/ARM32/ARM64 and desktop VST2 targets, runs
-the SDK host simulator for each, builds the Bytebeat Machine VST3, and writes
-the release zips to `dist/`.
+the SDK host simulator for each, builds the Bytebeat Machine and Bytebeat Drums
+VST3s, and writes the release zips to `dist/`.
 
 Useful environment variables:
 
@@ -235,9 +244,9 @@ python3 tools/build.py "plugins/Bytebeat Drums" --target desktop
 ### Windows
 
 `build.ps1` performs the same steps with the SDK for both plugins and builds
-the Bytebeat Machine VST3 with Visual Studio 2022 + CMake. It is also what the
-GitHub Actions Windows job uses, so Windows VST2/VST3 builds are produced on
-every push without a local Windows machine.
+both VST3s with Visual Studio 2022 + CMake. It is also what the GitHub Actions
+Windows job uses, so Windows VST2/VST3 builds are produced on every push
+without a local Windows machine.
 
 ### VST3 only
 
@@ -245,13 +254,18 @@ every push without a local Windows machine.
 git submodule update --init --recursive
 cmake -S vst3 -B vst3/build -DCMAKE_BUILD_TYPE=Release
 cmake --build vst3/build -j"$(nproc)"
+
+cmake -S drums/vst3 -B drums/vst3/build -DCMAKE_BUILD_TYPE=Release
+cmake --build drums/vst3/build -j"$(nproc)"
 ```
 
-`COPY_PLUGIN_AFTER_BUILD` installs the bundle to
-`~/.vst3/Bytebeat Machine.vst3`. On Windows the same CMake project builds with
-MSVC; copy the `.vst3` folder to `C:\Program Files\Common Files\VST3` or
+`COPY_PLUGIN_AFTER_BUILD` installs the bundles to
+`~/.vst3/Bytebeat Machine.vst3` and `~/.vst3/Bytebeat Drums.vst3`. On Windows
+the same CMake projects build with MSVC; copy the `.vst3` folders to
+`C:\Program Files\Common Files\VST3` or
 `%LOCALAPPDATA%\Programs\Common\VST3`. See
-[`vst3/README.md`](vst3/README.md).
+[`vst3/README.md`](vst3/README.md) and
+[`drums/vst3/README.md`](drums/vst3/README.md).
 
 ### Tests
 
@@ -260,10 +274,14 @@ cmake -S tests -B tests/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build tests/build -j"$(nproc)"
 ./tests/build/core_tests
 ./tests/build/bbtool list
+
+ctest --test-dir vst3/build --output-on-failure
+ctest --test-dir drums/vst3/build --output-on-failure
 ```
 
 The top-level build also runs the MPC host simulator on both plugins
 (Bytebeat Machine with notes 60/64/67, Bytebeat Drums with notes 36/38/40).
+The drum core test also validates the shared factory kit table.
 
 `bbtool` validates and renders `.bb` files without a DAW:
 
@@ -385,7 +403,7 @@ garbage collector on the audio thread, unlike the native VM. The native engine
 is the safe default and the only engine on the MPC. A `.bb` file using
 `Math.*` or other JS-only syntax will not run on the MPC unless it is rewritten
 in the native dialect. The JavaScript engine is in the Bytebeat Machine VST3;
-Bytebeat Drums uses the native VM only and currently has no VST3.
+Bytebeat Drums uses the native VM only.
 
 ## VST3 editor
 
@@ -435,9 +453,10 @@ UI, a VST3 editor with library/preview scope, and an optional QuickJS-NG
 JavaScript engine with Expression, Function and Script modes. Windows VST3 is
 built by CI.
 
-**Bytebeat Drums v0.1.0**: 16-pad MPC/desktop VST2 drum instrument with per-pad
-formulas, level/pan/tune/decay/choke/mode, four macros, six factory kits and a
-13-tab MPC UI. Native VM only; no VST3 yet.
+**Bytebeat Drums v0.1.0**: 16-pad MPC/desktop VST2 and Linux/Windows VST3 drum
+instrument with per-pad formulas, level/pan/tune/decay/choke/mode, four macros,
+six shared factory kits, a 14-tab MPC UI and a 4×4 pad editor with kit browser
+and preview scope. Native VM only.
 
 ## Licence
 

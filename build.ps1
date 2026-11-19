@@ -125,5 +125,23 @@ Compress-Archive -Force -Path $DistVst3, (Join-Path $Root "LICENSE"), (Join-Path
     -DestinationPath (Join-Path $Dist "$MachineSlug-$MachineVersion-windows-vst3.zip")
 
 Write-Host ""
+Write-Host "== Bytebeat Drums VST3 =="
+$DrumsBuildDir = Join-Path $Root "drums/vst3/build-windows"
+Invoke-Checked "cmake" @("-S", (Join-Path $Root "drums/vst3"), "-B", $DrumsBuildDir,
+    "-G", "Visual Studio 17 2022", "-A", "x64", "-DCMAKE_BUILD_TYPE=Release")
+Invoke-Checked "cmake" @("--build", $DrumsBuildDir, "--config", "Release", "--parallel")
+
+$DrumsBundle = Join-Path $DrumsBuildDir "BytebeatDrums_artefacts/Release/VST3/$DrumsName.vst3"
+if (-not (Test-Path $DrumsBundle)) { throw "drum VST3 bundle not found at $DrumsBundle" }
+
+$DrumsDistVst3 = Join-Path $Dist "$DrumsName.vst3"
+if (Test-Path $DrumsDistVst3) { Remove-Item -Recurse -Force $DrumsDistVst3 }
+Copy-Item -Recurse $DrumsBundle $DrumsDistVst3
+Copy-Item (Join-Path $Root "LICENSE") $Dist
+Copy-Item (Join-Path $Root "NOTICE.md") $Dist
+Compress-Archive -Force -Path $DrumsDistVst3, (Join-Path $Root "LICENSE"), (Join-Path $Root "NOTICE.md") `
+    -DestinationPath (Join-Path $Dist "$DrumsSlug-$DrumsVersion-windows-vst3.zip")
+
+Write-Host ""
 Write-Host "Done. Release assets:"
 Get-ChildItem $Dist -Filter "*.zip" | Format-Table Name, Length
