@@ -102,7 +102,9 @@ The native engine is the default. The MPC build never includes QuickJS.
 The default is **Trigger** (MIDI notes start the formula at `t=0`). **Gated
 Free** runs one continuous clock and formula state; notes gate the output and
 apply note, pitch, velocity and aftertouch while held, without resetting `t`.
-**Free** is the un-gated drone mode, and **Sync** follows the host transport.
+**Free** is the un-gated drone mode (notes transpose it), and **Sync** follows
+the host transport while playing and free-runs from its current position when
+stopped. Pitch tracking is enabled by default.
 
 ## Parameters
 

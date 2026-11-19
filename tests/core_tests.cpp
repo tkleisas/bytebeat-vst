@@ -245,6 +245,13 @@ static void testBuiltins()
     }
 }
 
+static float peakOf(const std::vector<float>& a)
+{
+    float peak = 0.0f;
+    for (float v : a) peak = std::max(peak, std::fabs(v));
+    return peak;
+}
+
 static void testEngine()
 {
     FormulaMeta meta;
@@ -274,6 +281,12 @@ static void testEngine()
         if (std::fabs(l[i]) > 1e-5f) any = true;
     }
     CHECK(any);
+
+    // Free mode keeps its clock, but notes transpose the running voice.
+    engine.noteOn(72, 100);
+    CHECK(engine.primaryNote() == 72);
+    engine.noteOff(72);
+    CHECK(engine.primaryNote() == 60);
 
     // Trigger mode: a note must produce sound and release to silence.
     Settings t = s;
@@ -317,13 +330,50 @@ static void testEngine()
     std::vector<float> c(256), d(256);
     engine.render(c.data(), d.data(), 256);
     CHECK_NEAR(c[0], first, 1e-6);
+
+    // A stopped transport free-runs instead of going silent.
+    Settings stopped = sy;
+    stopped.playing = false;
+    engine.setSettings(stopped);
+    std::vector<float> e(1024), f(1024);
+    engine.render(e.data(), f.data(), (int)e.size());
+    CHECK(peakOf(e) > 1e-5f);
 }
 
-static float peakOf(const std::vector<float>& a)
+static void testPitchTracking()
 {
-    float peak = 0.0f;
-    for (float v : a) peak = std::max(peak, std::fabs(v));
-    return peak;
+    auto prog = compile("0.5");
+    CHECK(prog.ok);
+    if (!prog.ok) return;
+
+    Engine engine;
+    Settings s;
+    s.program = prog.program.get();
+    s.playMode = kPlayFree;
+    s.outputMode = kOutFloat;
+    s.clockRate = 8000.0;
+    s.speed = 1.0;
+    s.run = true;
+    s.rootNote = 60;
+    s.pitchTrack = true;
+    s.volume = 0.5f;
+    s.hostRate = 44100.0;
+    engine.prepare(44100.0);
+    engine.setSettings(s);
+
+    std::vector<float> l(1024), r(1024);
+    engine.render(l.data(), r.data(), 1024);
+    const int64_t base = engine.primaryT();
+    engine.render(l.data(), r.data(), 1024);
+    const int64_t normalDelta = engine.primaryT() - base;
+
+    const int64_t beforeNote = engine.primaryT();
+    engine.noteOn(72, 127); // one octave above root
+    engine.render(l.data(), r.data(), 1024);
+    const int64_t pitchDelta = engine.primaryT() - beforeNote;
+
+    CHECK(normalDelta > 0);
+    CHECK(pitchDelta > normalDelta * 3 / 2);
 }
 
 static void testGatedFree()
@@ -458,6 +508,7 @@ int main()
     testBuiltins();
     testDrumKits();
     testEngine();
+    testPitchTracking();
     testGatedFree();
 
     std::printf("%d checks, %d failure(s)\n", g_checks, g_failures);

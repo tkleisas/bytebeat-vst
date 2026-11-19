@@ -45,9 +45,10 @@ affiliated with or endorsed by them.
 - **A–H macros**: eight automatable 0–1 inputs for the formula (`a`…`h`). This
   is how a fixed formula becomes playable and mixable.
 - **Free, Sync, Trigger and Gated Free** play modes:
-  - Free: `t` runs continuously from reset; MIDI notes do not gate it.
-  - Sync: `t` follows the host transport, so patterns line up with the
-    timeline and loop.
+  - Free: `t` runs continuously from reset. Pads do not gate the output, but
+    they transpose the running pattern when Pitch is on.
+  - Sync: `t` follows the host transport while it plays and free-runs from its
+    current position when stopped. Pads transpose the pattern like Free.
   - Trigger: each MIDI note starts its own voice at `t=0`; 1–8 voices,
     optional pitch tracking, attack/release, reset-on-note.
   - Gated Free: one continuous clock and formula state; pads gate the output
@@ -137,7 +138,7 @@ Requires **MPC OS 3.10.1 or later** with **External Plugin Support** enabled:
 **Preferences → Enhancements (Beta)** → *Enable Enhancements* and *External
 Plugin Support*, then restart the MPC app.
 
-1. Take `bytebeat-machine-0.3.0-mpc.zip` and/or
+1. Take `bytebeat-machine-0.3.1-mpc.zip` and/or
    `bytebeat-drums-0.1.0-mpc.zip` from the release (or build them) and unzip.
 2. Copy the whole `bokontep - VST - Bytebeat Machine` and/or
    `bokontep - VST - Bytebeat Drums` folder into a folder named exactly
@@ -448,11 +449,13 @@ this workspace already has it applied. If you update YAWN, reapply the patch.
 The default play mode is **Trigger**: MIDI notes start the formula at `t=0`.
 Switch to **Gated Free** on the PLAY page (or the Play Mode combo) for a
 continuous clock where pads gate the output and apply note, pitch, velocity and
-aftertouch while held. **Free** is the un-gated drone mode.
+aftertouch while held. **Free** is the un-gated drone mode; pads transpose it
+but do not gate it. Pitch tracking is on by default for new instances; turn
+**Pitch** off if you want a rhythmic formula to keep one tempo across notes.
 
 ## Status
 
-**Bytebeat Machine v0.3.0**: MPC ARM32/ARM64 + desktop VST2 + Linux/Windows
+**Bytebeat Machine v0.3.1**: MPC ARM32/ARM64 + desktop VST2 + Linux/Windows
 VST3, native formula compiler/VM, bytebeat/signed/floatbeat/stereo, A–H macros,
 free/sync/trigger/gated-free modes, aftertouch, 24 built-in formulas, user `.bb` files, MPC scripted
 UI, a VST3 editor with library/preview scope, and an optional QuickJS-NG

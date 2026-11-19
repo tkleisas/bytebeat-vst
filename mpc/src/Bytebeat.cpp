@@ -201,8 +201,8 @@ public:
         addParam(floatParam("pan", "Pan", -100.0f, 100.0f, 0.0f, "%", 0));
 
         addParam(intParam  ("voices", "Voices", 1, bytebeat::kMaxVoices, 4));
-        addParam(intParam  ("root", "Root", 0, 127, 60));
-        addParam(boolParam ("pitch", "Pitch", false));
+        addParam(intParam  ("root", "Root", 0, 127, 36));
+        addParam(boolParam ("pitch", "Pitch", true));
         addParam(floatParam("attack", "Attack", 0.0f, 100.0f, 2.0f, "ms", 1));
         addParam(logParam  ("release", "Release", 1.0f, 2000.0f, 80.0f, "ms", 0));
         addParam(boolParam ("reset_note", "Reset", true));
@@ -433,7 +433,7 @@ private:
         info.name         = "Bytebeat Machine";
         info.vendor       = "bokontep";
         info.uniqueId     = MPC_FOURCC('B', 'b', 't', '1');
-        info.version      = 300;
+        info.version      = 301;
         info.isInstrument = true;
         info.numInputs    = 0;
         info.numOutputs   = 2;
@@ -663,7 +663,7 @@ private:
 
         addProgram("Init", make({
             { kPlayMode, 2 }, { kVoices, 4 }, { kRun, 1 },
-            { kVolume, -12 } }));
+            { kRoot, 36 }, { kPitch, 1 }, { kVolume, -12 } }));
         addProgram("Copper Bars", make({
             { kFormula, 0 }, { kRun, 1 }, { kPlayMode, 3 },
             { kA, 35 }, { kB, 70 }, { kC, 50 }, { kD, 50 },

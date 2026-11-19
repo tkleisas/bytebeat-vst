@@ -100,7 +100,7 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
 
     layout.add(std::make_unique<AudioParameterInt>(ParameterID { pid::voices, 1 }, "Voices", 1, 8, 4));
     layout.add(std::make_unique<AudioParameterInt>(ParameterID { pid::root, 1 }, "Root", 0, 127, 60));
-    layout.add(std::make_unique<AudioParameterBool>(ParameterID { pid::pitch, 1 }, "Pitch Track", false));
+    layout.add(std::make_unique<AudioParameterBool>(ParameterID { pid::pitch, 1 }, "Pitch Track", true));
     addFloat(pid::attack, "Attack", 0.0f, 100.0f, 2.0f, "ms");
     addFloat(pid::release, "Release", 1.0f, 2000.0f, 80.0f, "ms", 0.35f);
     layout.add(std::make_unique<AudioParameterBool>(ParameterID { pid::resetNote, 1 }, "Reset", true));

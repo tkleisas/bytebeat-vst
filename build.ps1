@@ -10,7 +10,7 @@ $Dist = Join-Path $Root "dist"
 
 $MachineName = "Bytebeat Machine"
 $MachineSlug = "bytebeat-machine"
-$MachineVersion = "0.3.0"
+$MachineVersion = "0.3.1"
 $DrumsName = "Bytebeat Drums"
 $DrumsSlug = "bytebeat-drums"
 $DrumsVersion = "0.1.0"

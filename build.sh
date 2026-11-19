@@ -11,7 +11,7 @@ PYTHON="${PYTHON:-python3}"
 MACHINE_NAME="Bytebeat Machine"
 MACHINE_SRC="$ROOT/mpc"
 MACHINE_SLUG="bytebeat-machine"
-MACHINE_VERSION="0.3.0"
+MACHINE_VERSION="0.3.1"
 
 DRUMS_NAME="Bytebeat Drums"
 DRUMS_SRC="$ROOT/drums/mpc"

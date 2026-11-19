@@ -1,5 +1,14 @@
 # Changelog
 
+## Bytebeat Machine 0.3.1
+
+- Pitch tracking is now on by default, and the MPC Root default is 36, so
+  pads transpose the running pattern instead of all sounding at one pitch.
+- Free and Sync now accept pad notes as pitch/velocity modulation while their
+  clocks keep running. Free remains un-gated; Sync follows the transport when
+  it is playing and free-runs from its current position when stopped.
+- Fixed Sync mode being silent while the MPC transport was stopped.
+
 ## Bytebeat Machine 0.3.0
 
 - New **Gated Free** play mode: one continuous clock and formula state, pads

@@ -164,7 +164,12 @@ public:
     {
         if (settings_.playMode == kPlayGatedFree)
         {
-            gatedNoteOn(note, velocity);
+            continuousNoteOn(note, velocity, true);
+            return;
+        }
+        if (settings_.playMode == kPlayFree || settings_.playMode == kPlaySync)
+        {
+            continuousNoteOn(note, velocity, false);
             return;
         }
         if (settings_.playMode != kPlayTrigger || settings_.program == nullptr)
@@ -240,7 +245,12 @@ public:
     {
         if (settings_.playMode == kPlayGatedFree)
         {
-            gatedNoteOff(note);
+            continuousNoteOff(note, true);
+            return;
+        }
+        if (settings_.playMode == kPlayFree || settings_.playMode == kPlaySync)
+        {
+            continuousNoteOff(note, false);
             return;
         }
         if (settings_.playMode != kPlayTrigger) return;
@@ -261,7 +271,7 @@ public:
             v.gate = false;
             v.pressureTarget = 0.0;
         }
-        if (settings_.playMode == kPlayGatedFree && freeVoiceActive_)
+        if (settings_.playMode != kPlayTrigger && freeVoiceActive_)
         {
             Voice& v = voices_[0];
             v.note = settings_.rootNote;
@@ -323,13 +333,9 @@ public:
         const double sr = sampleRate_;
         const double macroCoeff = 1.0 - std::exp(-1.0 / (0.010 * sr));
         const double runCoeff   = 1.0 - std::exp(-1.0 / (0.005 * sr));
-        const double runTarget  = (settings_.playMode == kPlayFree)
-                                    ? (settings_.run ? 1.0 : 0.0)
-                                    : (settings_.playMode == kPlaySync)
-                                        ? (settings_.playing ? 1.0 : 0.0)
-                                        : (settings_.playMode == kPlayGatedFree)
-                                            ? (settings_.run ? 1.0 : 0.0)
-                                            : 1.0;
+        const double runTarget  = (settings_.playMode == kPlayTrigger)
+                                    ? 1.0
+                                    : (settings_.run ? 1.0 : 0.0);
 
         attackInc_  = settings_.attackMs  <= 0.0f ? 1.0 : 1.0 / (settings_.attackMs  * 0.001 * sr);
         releaseInc_ = settings_.releaseMs <= 0.0f ? 1.0 : 1.0 / (settings_.releaseMs * 0.001 * sr);
@@ -423,7 +429,10 @@ public:
                     freeVoiceActive_ = true;
                 }
 
-                if (settings_.playMode == kPlaySync)
+                // Sync follows the transport while it is playing. When the
+                // transport is stopped or unavailable, keep the clock running
+                // from its current position instead of freezing silently.
+                if (settings_.playMode == kPlaySync && settings_.playing)
                     advanceSync(v);
                 else if (settings_.run)
                     advanceVoice(v, 0);
@@ -562,8 +571,9 @@ private:
 
     void advanceSync(Voice& v)
     {
+        const double factor = pitchFactor(v);
         const double pos = settings_.transportSamples / settings_.hostRate
-                         * settings_.clockRate * settings_.speed;
+                         * settings_.clockRate * settings_.speed * factor;
         if (!std::isfinite(pos)) { v.outL = v.outR = 0.0; return; }
 
         const int64_t nt = (int64_t)std::floor(pos);
@@ -588,7 +598,7 @@ private:
 
         double l = v.currL;
         double r = v.currR;
-        const double ratio = settings_.clockRate * settings_.speed / sampleRate_;
+        const double ratio = settings_.clockRate * settings_.speed * factor / sampleRate_;
         if (settings_.smooth > 0.0f && ratio < 1.0)
         {
             const double f = settings_.smooth * v.phase;
@@ -599,13 +609,15 @@ private:
         v.outR = r;
     }
 
+    double pitchFactor(const Voice& v) const
+    {
+        if (!settings_.pitchTrack) return 1.0;
+        return std::pow(2.0, (v.note - settings_.rootNote) / 12.0);
+    }
+
     double effectiveRate(const Voice& v) const
     {
-        double rate = settings_.clockRate * settings_.speed;
-        if ((settings_.playMode == kPlayTrigger || settings_.playMode == kPlayGatedFree)
-            && settings_.pitchTrack)
-            rate *= std::pow(2.0, (v.note - settings_.rootNote) / 12.0);
-        return rate;
+        return settings_.clockRate * settings_.speed * pitchFactor(v);
     }
 
     void evalVoice(Voice& v, int index)
@@ -689,7 +701,7 @@ private:
         double pressure = 0.0;
     };
 
-    void gatedNoteOn(int note, int velocity)
+    void continuousNoteOn(int note, int velocity, bool gate)
     {
         if (settings_.program == nullptr && settings_.evaluator == nullptr)
             return;
@@ -731,7 +743,7 @@ private:
 
         Voice& v = voices_[0];
         v.active = true;
-        v.gate = true;
+        v.gate = gate;
         v.note = note;
         v.vel = vel;
         v.ampVel = 0.25 + 0.75 * vel;
@@ -739,7 +751,7 @@ private:
         // t, phase and the formula state deliberately keep running.
     }
 
-    void gatedNoteOff(int note)
+    void continuousNoteOff(int note, bool gate)
     {
         int index = -1;
         for (int i = 0; i < numHeld_; ++i)
@@ -761,7 +773,7 @@ private:
         if (numHeld_ > 0)
         {
             const HeldNote& h = held_[numHeld_ - 1];
-            v.gate = true;
+            v.gate = gate;
             v.note = h.note;
             v.vel = h.velocity;
             v.ampVel = 0.25 + 0.75 * h.velocity;
@@ -771,6 +783,13 @@ private:
         {
             v.gate = false;
             v.pressureTarget = 0.0;
+            if (!gate)
+            {
+                // Un-gated free/sync modes keep running at the root pitch.
+                v.note = settings_.rootNote;
+                v.vel = 1.0;
+                v.ampVel = 1.0;
+            }
         }
     }
 
