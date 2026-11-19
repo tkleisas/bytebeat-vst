@@ -180,7 +180,7 @@ public:
                              { "Formula", "4000", "8000", "11025", "16000",
                                "22050", "32000", "44100", "48000" }, 0));
         addParam(choiceParam("play_mode", "Play Mode",
-                             { "Free", "Sync", "Trigger" }, 0));
+                             { "Free", "Sync", "Trigger", "Gated Free" }, 2));
         addParam(boolParam ("run", "Run", true));
         addParam(logParam  ("speed", "Speed", 0.25f, 4.0f, 1.0f, "x", 2));
         addParam(floatParam("smooth", "Smooth", 0.0f, 100.0f, 0.0f, "%", 0));
@@ -421,6 +421,10 @@ private:
             engine_.noteOff(ev.note());
         else if (ev.isAllNotesOff())
             engine_.allNotesOff();
+        else if (ev.status() == 0xD0)
+            engine_.setChannelPressure(ev.data[1] / 127.0);
+        else if (ev.status() == 0xA0)
+            engine_.setPolyPressure(ev.data[1], ev.data[2] / 127.0);
     }
 
     static mpc::PluginInfo makeInfo()
@@ -429,7 +433,7 @@ private:
         info.name         = "Bytebeat Machine";
         info.vendor       = "bokontep";
         info.uniqueId     = MPC_FOURCC('B', 'b', 't', '1');
-        info.version      = 200;
+        info.version      = 300;
         info.isInstrument = true;
         info.numInputs    = 0;
         info.numOutputs   = 2;
@@ -609,7 +613,7 @@ private:
         s.speed      = (double)get(kSpeed);
         s.smooth     = get(kSmooth) * 0.01f;
 
-        s.playMode    = std::clamp(getInt(kPlayMode), 0, 2);
+        s.playMode    = std::clamp(getInt(kPlayMode), 0, 3);
         s.run         = getBool(kRun);
         s.voices      = getInt(kVoices);
         s.rootNote    = getInt(kRoot);
@@ -661,32 +665,32 @@ private:
             { kPlayMode, 2 }, { kVoices, 4 }, { kRun, 1 },
             { kVolume, -12 } }));
         addProgram("Copper Bars", make({
-            { kFormula, 0 }, { kRun, 1 }, { kPlayMode, 0 },
+            { kFormula, 0 }, { kRun, 1 }, { kPlayMode, 3 },
             { kA, 35 }, { kB, 70 }, { kC, 50 }, { kD, 50 },
             { kVolume, -8 } }));
         addProgram("Sierpinski", make({
-            { kFormula, 1 }, { kRun, 1 }, { kTone, 75 },
+            { kFormula, 1 }, { kRun, 1 }, { kPlayMode, 3 }, { kTone, 75 },
             { kVolume, -10 } }));
         addProgram("Rusty", make({
-            { kFormula, 3 }, { kRun, 1 }, { kDrive, 35 },
+            { kFormula, 3 }, { kRun, 1 }, { kPlayMode, 3 }, { kDrive, 35 },
             { kTone, 65 }, { kVolume, -10 } }));
         addProgram("Chime", make({
-            { kFormula, 11 }, { kRun, 1 }, { kTone, 85 },
+            { kFormula, 11 }, { kRun, 1 }, { kPlayMode, 3 }, { kTone, 85 },
             { kB, 25 }, { kRelease, 300 }, { kVolume, -8 } }));
         addProgram("Glass", make({
-            { kFormula, 15 }, { kRun, 1 }, { kClock, 0 },
+            { kFormula, 15 }, { kRun, 1 }, { kPlayMode, 3 }, { kClock, 0 },
             { kTone, 90 }, { kWidth, 80 }, { kVolume, -8 } }));
         addProgram("Stereo Maze", make({
-            { kFormula, 18 }, { kRun, 1 }, { kWidth, 100 },
+            { kFormula, 18 }, { kRun, 1 }, { kPlayMode, 3 }, { kWidth, 100 },
             { kPan, 0 }, { kVolume, -10 } }));
         addProgram("Longline", make({
-            { kFormula, 19 }, { kRun, 1 }, { kClock, 0 },
+            { kFormula, 19 }, { kRun, 1 }, { kPlayMode, 3 }, { kClock, 0 },
             { kTone, 80 }, { kVolume, -6 } }));
         addProgram("Accumulator", make({
-            { kFormula, 21 }, { kRun, 1 }, { kA, 20 }, { kB, 60 },
+            { kFormula, 21 }, { kRun, 1 }, { kPlayMode, 3 }, { kA, 20 }, { kB, 60 },
             { kTone, 70 }, { kVolume, -10 } }));
         addProgram("Filtered", make({
-            { kFormula, 22 }, { kRun, 1 }, { kClock, 0 },
+            { kFormula, 22 }, { kRun, 1 }, { kPlayMode, 3 }, { kClock, 0 },
             { kTone, 75 }, { kVolume, -8 } }));
         addProgram("Trigger Keys", make({
             { kFormula, 0 }, { kPlayMode, 2 }, { kVoices, 4 },
@@ -697,7 +701,7 @@ private:
             { kFormula, 2 }, { kPlayMode, 1 }, { kClock, 0 },
             { kTone, 75 }, { kVolume, -10 } }));
         addProgram("Noise Wash", make({
-            { kFormula, 8 }, { kRun, 1 }, { kTone, 55 },
+            { kFormula, 8 }, { kRun, 1 }, { kPlayMode, 3 }, { kTone, 55 },
             { kDrive, 20 }, { kVolume, -14 } }));
     }
 

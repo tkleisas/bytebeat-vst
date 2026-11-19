@@ -1,5 +1,22 @@
 # Changelog
 
+## Bytebeat Machine 0.3.0
+
+- New **Gated Free** play mode: one continuous clock and formula state, pads
+  gate the output and apply note, pitch, velocity and aftertouch while held.
+  `t` never resets in this mode.
+- MPC default play mode is now **Trigger**, so the instrument is silent until a
+  note is played. Free remains available as the un-gated drone mode.
+- Free-running MPC factory programs now use **Gated Free**, so their patterns
+  keep evolving but only sound while a pad is held.
+- New `aftertouch` formula global (0–1, smoothed), fed by MIDI channel pressure
+  and polyphonic aftertouch. JavaScript engine arguments include it too.
+- Trigger mode now applies channel/poly aftertouch per voice.
+- Play mode choices are now Free/Sync/Trigger/Gated Free. Existing project
+  values keep their meaning.
+- Added engine tests for free-running gates, last-note priority, `t`
+  continuity and aftertouch.
+
 ## Bytebeat Drums 0.1.0
 
 - New 16-pad bytebeat drum instrument for MPC OS 3.10.1+, desktop VST2 and

@@ -541,6 +541,16 @@ private:
         {
             allPadsOff();
         }
+        else if (ev.status() == 0xD0)
+        {
+            for (auto& pad : pads_)
+                pad.engine.setChannelPressure(ev.data[1] / 127.0);
+        }
+        else if (ev.status() == 0xA0)
+        {
+            for (auto& pad : pads_)
+                pad.engine.setPolyPressure(ev.data[1], ev.data[2] / 127.0);
+        }
     }
 
     void triggerPad(int pad, int note, int velocity)

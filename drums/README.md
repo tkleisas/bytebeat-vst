@@ -103,7 +103,7 @@ alphabetically. The name comes from the file name or the `name:` directive.
 
 The formula's `t` starts at 0 on every pad trigger. Its output is shaped by the
 pad's Decay envelope. The formula can read `note`, `freq`, `vel`, `gate`,
-`voice`, the macros `a`–`d`, and all the usual globals. It can use persistent
+`voice`, `aftertouch`, the macros `a`–`d`, and all the usual globals. It can use persistent
 state (`x`, `y`, `z`) per pad voice.
 
 User `.bb` files are selected per pad on the **P… F** pages. The MPC state saves

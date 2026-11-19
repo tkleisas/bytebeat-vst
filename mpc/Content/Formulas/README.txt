@@ -21,7 +21,8 @@ A .bb file is a text formula with optional leading comment directives:
 
 The formula itself supports:
 
-  t, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice
+  t, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice,
+  aftertouch  (0..1, smoothed MIDI pressure)
   a..h        macros, 0..1 (the MPC shows them as 0..100%)
   PI, TAU, E
   sin cos tan asin acos atan atan2 sinh cosh tanh

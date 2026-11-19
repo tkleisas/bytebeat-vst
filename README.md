@@ -3,7 +3,8 @@
 Two instruments built around the same bytebeat compiler, VM and engine:
 
 - **Bytebeat Machine** — one formula at a time, with a full VST3 editor,
-  free/sync/trigger play modes, 1–8 voices, user `.bb` files and MPC/desktop
+  free/sync/trigger/gated-free play modes, aftertouch, 1–8 voices,
+  user `.bb` files and MPC/desktop
   builds.
 - **Bytebeat Drums** — 16 pads, each with its own formula, level, pan, tune,
   decay, choke group, play mode and four macros; MPC/desktop VST2 and
@@ -43,14 +44,18 @@ affiliated with or endorsed by them.
   an 8 kHz formula sounds like an 8 kHz formula.
 - **A–H macros**: eight automatable 0–1 inputs for the formula (`a`…`h`). This
   is how a fixed formula becomes playable and mixable.
-- **Free, Sync and Trigger** play modes:
-  - Free: `t` runs continuously from reset.
+- **Free, Sync, Trigger and Gated Free** play modes:
+  - Free: `t` runs continuously from reset; MIDI notes do not gate it.
   - Sync: `t` follows the host transport, so patterns line up with the
     timeline and loop.
-  - Trigger: each MIDI note starts its own voice; 1–8 voices, optional pitch
-    tracking, attack/release, reset-on-note.
+  - Trigger: each MIDI note starts its own voice at `t=0`; 1–8 voices,
+    optional pitch tracking, attack/release, reset-on-note.
+  - Gated Free: one continuous clock and formula state; pads gate the output
+    and apply note, pitch, velocity and aftertouch while held, without
+    resetting `t`. Last-note priority.
 - **Formula globals**: `t`, `sr`, `time`, `beat`, `bar`, `tempo`, `playing`,
-  `note`, `freq`, `vel`, `gate`, `voice`, `a`…`h`, `PI`, `TAU`, `E`.
+  `note`, `freq`, `vel`, `gate`, `voice`, `aftertouch`, `a`…`h`, `PI`, `TAU`,
+  `E`.
 - **Persistent variables**: `x`, `y`, `z` (and any other identifier) keep
   their value between clock ticks, per voice. This enables filters,
   accumulators and stateful rhythms.
@@ -132,7 +137,7 @@ Requires **MPC OS 3.10.1 or later** with **External Plugin Support** enabled:
 **Preferences → Enhancements (Beta)** → *Enable Enhancements* and *External
 Plugin Support*, then restart the MPC app.
 
-1. Take `bytebeat-machine-0.2.0-mpc.zip` and/or
+1. Take `bytebeat-machine-0.3.0-mpc.zip` and/or
    `bytebeat-drums-0.1.0-mpc.zip` from the release (or build them) and unzip.
 2. Copy the whole `bokontep - VST - Bytebeat Machine` and/or
    `bokontep - VST - Bytebeat Drums` folder into a folder named exactly
@@ -384,7 +389,7 @@ The function (or returned function) receives, in order:
 
 ```
 t, a, b, c, d, e, f, g, h, sr, time, beat, bar, tempo, playing,
-note, freq, vel, gate, voice
+note, freq, vel, gate, voice, aftertouch
 ```
 
 The prelude provides `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `trunc`,
@@ -440,15 +445,16 @@ by ANS 1964 is included as
 [`vst3/yawn-state-sync.patch`](vst3/yawn-state-sync.patch); the YAWN checkout in
 this workspace already has it applied. If you update YAWN, reapply the patch.
 
-The default play mode is **Trigger**: MIDI notes start the formula. Switch to
-**Free** on the PLAY page (or the Play Mode combo) for a continuous stream that
-does not need notes.
+The default play mode is **Trigger**: MIDI notes start the formula at `t=0`.
+Switch to **Gated Free** on the PLAY page (or the Play Mode combo) for a
+continuous clock where pads gate the output and apply note, pitch, velocity and
+aftertouch while held. **Free** is the un-gated drone mode.
 
 ## Status
 
-**Bytebeat Machine v0.2.0**: MPC ARM32/ARM64 + desktop VST2 + Linux/Windows
+**Bytebeat Machine v0.3.0**: MPC ARM32/ARM64 + desktop VST2 + Linux/Windows
 VST3, native formula compiler/VM, bytebeat/signed/floatbeat/stereo, A–H macros,
-free/sync/trigger modes, 24 built-in formulas, user `.bb` files, MPC scripted
+free/sync/trigger/gated-free modes, aftertouch, 24 built-in formulas, user `.bb` files, MPC scripted
 UI, a VST3 editor with library/preview scope, and an optional QuickJS-NG
 JavaScript engine with Expression, Function and Script modes. Windows VST3 is
 built by CI.

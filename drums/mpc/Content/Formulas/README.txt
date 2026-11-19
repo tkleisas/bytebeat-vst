@@ -23,7 +23,8 @@ A .bb file is a text formula with optional leading comment directives:
 
 The formula itself supports:
 
-  t, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice
+  t, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice,
+  aftertouch  (0..1, smoothed MIDI pressure)
   a..d        per-pad macros, 0..1 (the pads show A-D as 0..100%)
   e..h        fixed at 0.5 in the drum plugin
   PI, TAU, E

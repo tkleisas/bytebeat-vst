@@ -44,6 +44,7 @@ static void eval(JsEvaluator& e, double t, double a, double& left, double& right
     g[G_VEL] = 0.8;
     g[G_GATE] = 1.0;
     g[G_VOICE] = voice;
+    g[G_AT] = 0.25;
     double state[kMaxVars] = {};
     e.evaluate(voice, g, state, left, right);
 }
@@ -68,6 +69,14 @@ static void testExpression()
     auto m = make("a*100 + b*10");
     CHECK(m != nullptr);
     if (!m) return;
+
+    auto at = make("aftertouch*100");
+    CHECK(at != nullptr);
+    if (at)
+    {
+        eval(*at, 0, 0.5, l, r);
+        CHECK_NEAR(l, 25.0, 1e-9);
+    }
     eval(*m, 0, 0.5, l, r);
     CHECK_NEAR(l, 52.5, 1e-9);
 

@@ -58,7 +58,7 @@ globalThis.TAU = Math.PI * 2;
 globalThis.E = Math.E;
 )JS";
 
-const char* kParams = "t,a,b,c,d,e,f,g,h,sr,time,beat,bar,tempo,playing,note,freq,vel,gate,voice";
+const char* kParams = "t,a,b,c,d,e,f,g,h,sr,time,beat,bar,tempo,playing,note,freq,vel,gate,voice,aftertouch";
 
 std::string wrapSource(const std::string& source, int mode)
 {
@@ -202,7 +202,7 @@ bool JsEvaluator::initialize(const std::string& source, int mode, int numVoices,
             return false;
         }
 
-        JSValue args[20];
+        JSValue args[21];
         args[0] = JS_NewFloat64(probe, 0.0);
         for (int k = 0; k < kNumMacros; ++k)
             args[1 + k] = JS_NewFloat64(probe, 0.5);
@@ -217,8 +217,9 @@ bool JsEvaluator::initialize(const std::string& source, int mode, int numVoices,
         args[17] = JS_NewFloat64(probe, 0.8);
         args[18] = JS_NewFloat64(probe, 1.0);
         args[19] = JS_NewFloat64(probe, 0.0);
+        args[20] = JS_NewFloat64(probe, 0.0);
 
-        JSValue sample = JS_Call(probe, fn, JS_UNDEFINED, 20, args);
+        JSValue sample = JS_Call(probe, fn, JS_UNDEFINED, 21, args);
         if (JS_IsException(sample))
         {
             error = "JavaScript error at t=0: " + exceptionText(probe);
@@ -336,8 +337,8 @@ void JsEvaluator::evaluate(int voice, const double* globals, double* state,
     deadline_ = std::chrono::steady_clock::now() + kInterruptBudget;
 
     // Keep this argument order in sync with kParams:
-    // t, a..h, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice.
-    JSValue args[20];
+    // t, a..h, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice, aftertouch.
+    JSValue args[21];
     args[0] = JS_NewFloat64(ctx, globals[G_T]);
     for (int i = 0; i < kNumMacros; ++i)
         args[1 + i] = JS_NewFloat64(ctx, globals[G_A + i]);
@@ -352,8 +353,9 @@ void JsEvaluator::evaluate(int voice, const double* globals, double* state,
     args[17] = JS_NewFloat64(ctx, globals[G_VEL]);
     args[18] = JS_NewFloat64(ctx, globals[G_GATE]);
     args[19] = JS_NewFloat64(ctx, globals[G_VOICE]);
+    args[20] = JS_NewFloat64(ctx, globals[G_AT]);
 
-    JSValue result = JS_Call(ctx, fn_[(size_t)v], JS_UNDEFINED, 20, args);
+    JSValue result = JS_Call(ctx, fn_[(size_t)v], JS_UNDEFINED, 21, args);
     if (JS_IsException(result))
     {
         runtimeError_.store(true, std::memory_order_relaxed);

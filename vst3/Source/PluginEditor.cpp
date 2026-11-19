@@ -563,7 +563,7 @@ BytebeatAudioProcessorEditor::BytebeatAudioProcessorEditor(BytebeatAudioProcesso
     play->addCombo(bbvst::pid::mode, "Mode", { "Bytebeat", "Signed", "Floatbeat" });
     play->addCombo(bbvst::pid::clock, "Clock",
                    { "4000", "8000", "11025", "16000", "22050", "32000", "44100", "48000" });
-    play->addCombo(bbvst::pid::playMode, "Play Mode", { "Free", "Sync", "Trigger" });
+    play->addCombo(bbvst::pid::playMode, "Play Mode", { "Free", "Sync", "Trigger", "Gated Free" });
     play->addToggle(bbvst::pid::run, "Run");
     play->addKnob(bbvst::pid::speed, "Speed");
     play->addKnob(bbvst::pid::smooth, "Smooth");

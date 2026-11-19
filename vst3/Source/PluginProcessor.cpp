@@ -121,7 +121,7 @@ bytebeat::Settings BytebeatAudioProcessor::makeSettings(double sampleRate) const
     s.speed = (double)plain(apvts_, bbvst::pid::speed);
     s.smooth = plain(apvts_, bbvst::pid::smooth) * 0.01f;
 
-    s.playMode = juce::jlimit(0, 2, (int)std::lround(plain(apvts_, bbvst::pid::playMode)));
+    s.playMode = juce::jlimit(0, 3, (int)std::lround(plain(apvts_, bbvst::pid::playMode)));
     s.run = plain(apvts_, bbvst::pid::run) > 0.5f;
     s.voices = (int)std::lround(plain(apvts_, bbvst::pid::voices));
     s.rootNote = (int)std::lround(plain(apvts_, bbvst::pid::root));
@@ -203,6 +203,10 @@ void BytebeatAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             engine_.noteOff(msg.getNoteNumber());
         else if (msg.isAllNotesOff() || msg.isAllSoundOff())
             engine_.allNotesOff();
+        else if (msg.isChannelPressure())
+            engine_.setChannelPressure(msg.getChannelPressureValue() / 127.0);
+        else if (msg.isAftertouch())
+            engine_.setPolyPressure(msg.getNoteNumber(), msg.getAfterTouchValue() / 127.0);
     }
     if (pos < n)
         render(pos, n - pos);

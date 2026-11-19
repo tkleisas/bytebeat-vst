@@ -80,7 +80,7 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createLayout()
         StringArray { "4000", "8000", "11025", "16000", "22050", "32000", "44100", "48000" }, 1));
     layout.add(std::make_unique<AudioParameterChoice>(
         ParameterID { pid::playMode, 1 }, "Play Mode",
-        StringArray { "Free", "Sync", "Trigger" }, 2));
+        StringArray { "Free", "Sync", "Trigger", "Gated Free" }, 2));
     layout.add(std::make_unique<AudioParameterBool>(ParameterID { pid::run, 1 }, "Run", true));
 
     addFloat(pid::speed, "Speed", 0.25f, 4.0f, 1.0f, "x", 0.5f);

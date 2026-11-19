@@ -212,6 +212,16 @@ void BytebeatDrumsAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         {
             allPadsOff();
         }
+        else if (msg.isChannelPressure())
+        {
+            for (auto& pad : pads_)
+                pad.engine.setChannelPressure(msg.getChannelPressureValue() / 127.0);
+        }
+        else if (msg.isAftertouch())
+        {
+            for (auto& pad : pads_)
+                pad.engine.setPolyPressure(msg.getNoteNumber(), msg.getAfterTouchValue() / 127.0);
+        }
     }
     if (pos < n)
         renderPads(left + pos, right != nullptr ? right + pos : nullptr, n - pos);

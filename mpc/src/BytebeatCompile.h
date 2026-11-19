@@ -63,6 +63,7 @@ enum GlobalIndex : int
     G_F = G_A + 5,
     G_G = G_A + 6,
     G_H = G_A + 7,
+    G_AT,
     G_COUNT
 };
 
@@ -562,7 +563,7 @@ inline const GlobalDef* findGlobal(const std::string& name)
         { "time", G_TIME }, { "beat", G_BEAT }, { "bar", G_BAR },
         { "tempo", G_TEMPO }, { "playing", G_PLAYING },
         { "note", G_NOTE }, { "freq", G_FREQ }, { "vel", G_VEL },
-        { "gate", G_GATE }, { "voice", G_VOICE },
+        { "gate", G_GATE }, { "voice", G_VOICE }, { "aftertouch", G_AT },
         { "a", G_A }, { "b", G_B }, { "c", G_C }, { "d", G_D },
         { "e", G_E }, { "f", G_F }, { "g", G_G }, { "h", G_H },
     };

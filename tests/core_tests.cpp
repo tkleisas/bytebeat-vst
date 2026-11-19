@@ -319,6 +319,92 @@ static void testEngine()
     CHECK_NEAR(c[0], first, 1e-6);
 }
 
+static float peakOf(const std::vector<float>& a)
+{
+    float peak = 0.0f;
+    for (float v : a) peak = std::max(peak, std::fabs(v));
+    return peak;
+}
+
+static void testGatedFree()
+{
+    auto gateProg = compile("0.5");
+    CHECK(gateProg.ok);
+    if (!gateProg.ok) return;
+
+    Engine engine;
+    Settings s;
+    s.program = gateProg.program.get();
+    s.playMode = kPlayGatedFree;
+    s.outputMode = kOutFloat;
+    s.clockRate = 8000.0;
+    s.speed = 1.0;
+    s.run = true;
+    s.voices = 1;
+    s.rootNote = 60;
+    s.pitchTrack = false;
+    s.attackMs = 0.0f;
+    s.releaseMs = 5.0f;
+    s.volume = 1.0f;
+    s.dcBlock = false;
+    s.smooth = 0.0f;
+    s.hostRate = 44100.0;
+
+    engine.prepare(44100.0);
+    engine.setSettings(s);
+
+    std::vector<float> l(1024), r(1024);
+    engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(engine.primaryT() > 0);
+    CHECK(peakOf(l) < 1e-5f); // free clock, but no pad is gating it
+
+    const int64_t beforeNote = engine.primaryT();
+    engine.noteOn(60, 127);
+    CHECK(engine.primaryT() == beforeNote); // gated free never resets t
+    engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(peakOf(l) > 0.1f);
+
+    // Last-note priority: releasing the newer note falls back to the held one.
+    engine.noteOn(64, 100);
+    CHECK(engine.primaryNote() == 64);
+    engine.noteOff(64);
+    CHECK(engine.primaryNote() == 60);
+
+    engine.noteOff(60);
+    for (int i = 0; i < 32; ++i)
+        engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(peakOf(l) < 1e-3f);
+    const int64_t silentT = engine.primaryT();
+    engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(engine.primaryT() > silentT); // the clock keeps running while silent
+
+    // aftertouch is a real formula global, smoothed and available while held.
+    auto atProg = compile("aftertouch");
+    CHECK(atProg.ok);
+    if (!atProg.ok) return;
+
+    Settings at = s;
+    at.program = atProg.program.get();
+    engine.allNotesOff();
+    engine.setSettings(at);
+    engine.setChannelPressure(0.0);
+    engine.noteOn(60, 127);
+    engine.setChannelPressure(1.0);
+    for (int i = 0; i < 8; ++i)
+        engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(peakOf(l) > 0.5f);
+
+    engine.setChannelPressure(0.0);
+    for (int i = 0; i < 32; ++i)
+        engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(peakOf(l) < 0.1f);
+
+    engine.setPolyPressure(60, 1.0);
+    for (int i = 0; i < 8; ++i)
+        engine.render(l.data(), r.data(), (int)l.size());
+    CHECK(peakOf(l) > 0.5f);
+}
+
 static void testDrumKits()
 {
     int count = 0;
@@ -372,6 +458,7 @@ int main()
     testBuiltins();
     testDrumKits();
     testEngine();
+    testGatedFree();
 
     std::printf("%d checks, %d failure(s)\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;

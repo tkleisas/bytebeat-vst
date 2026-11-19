@@ -28,9 +28,10 @@ enum OutputMode : int
 
 enum PlayMode : int
 {
-    kPlayFree    = 0,
-    kPlaySync    = 1,
-    kPlayTrigger = 2
+    kPlayFree       = 0,
+    kPlaySync       = 1,
+    kPlayTrigger    = 2,
+    kPlayGatedFree  = 3
 };
 
 constexpr int kMaxVoices = 8;
@@ -87,6 +88,7 @@ public:
     void prepare(double sampleRate)
     {
         sampleRate_ = sampleRate > 0.0 ? sampleRate : 44100.0;
+        pressureCoeff_ = 1.0 - std::exp(-1.0 / (0.005 * sampleRate_));
         reset();
     }
 
@@ -100,11 +102,27 @@ public:
         toneZL_ = toneZR_ = 0.0;
         runGain_ = 0.0;
         freeVoiceActive_ = false;
+        numHeld_ = 0;
+        channelPressure_ = 0.0;
 
         for (int i = 0; i < kNumMacros; ++i)
             macroSm_[i] = std::clamp((double)settings_.macro[i], 0.0, 1.0);
 
-        if (settings_.playMode != kPlayTrigger)
+        if (settings_.playMode == kPlayGatedFree)
+        {
+            Voice& v = voices_[0];
+            v = Voice {};
+            v.active = true;
+            v.gate = false;
+            v.note = settings_.rootNote;
+            v.vel = 1.0;
+            v.ampVel = 1.0;
+            v.env = 0.0;
+            v.t = 0;
+            prime(v, 0);
+            freeVoiceActive_ = true;
+        }
+        else if (settings_.playMode != kPlayTrigger)
         {
             Voice& v = voices_[0];
             v = Voice {};
@@ -144,6 +162,11 @@ public:
 
     void noteOn(int note, int velocity)
     {
+        if (settings_.playMode == kPlayGatedFree)
+        {
+            gatedNoteOn(note, velocity);
+            return;
+        }
         if (settings_.playMode != kPlayTrigger || settings_.program == nullptr)
             return;
 
@@ -185,6 +208,7 @@ public:
         chosen->gate = true;
         chosen->note = note;
         chosen->vel = vel;
+        chosen->pressureTarget = channelPressure_;
         chosen->gateRemaining = settings_.oneShotSamples;
         chosen->age = ++counter_;
 
@@ -214,16 +238,56 @@ public:
 
     void noteOff(int note)
     {
+        if (settings_.playMode == kPlayGatedFree)
+        {
+            gatedNoteOff(note);
+            return;
+        }
         if (settings_.playMode != kPlayTrigger) return;
         for (auto& v : voices_)
             if (v.active && v.note == note)
+            {
                 v.gate = false;
+                v.pressureTarget = 0.0;
+            }
     }
 
     void allNotesOff()
     {
+        numHeld_ = 0;
+        channelPressure_ = 0.0;
         for (auto& v : voices_)
+        {
             v.gate = false;
+            v.pressureTarget = 0.0;
+        }
+        if (settings_.playMode == kPlayGatedFree && freeVoiceActive_)
+        {
+            Voice& v = voices_[0];
+            v.note = settings_.rootNote;
+            v.vel = 1.0;
+            v.ampVel = 1.0;
+        }
+    }
+
+    void setChannelPressure(double pressure)
+    {
+        channelPressure_ = std::clamp(pressure, 0.0, 1.0);
+        for (auto& v : voices_)
+            if (v.active)
+                v.pressureTarget = channelPressure_;
+    }
+
+    void setPolyPressure(int note, double pressure)
+    {
+        const double p = std::clamp(pressure, 0.0, 1.0);
+        for (int i = 0; i < numHeld_; ++i)
+            if (held_[i].note == note)
+                held_[i].pressure = p;
+
+        for (auto& v : voices_)
+            if (v.active && v.note == note)
+                v.pressureTarget = p;
     }
 
     int64_t primaryT() const
@@ -263,7 +327,9 @@ public:
                                     ? (settings_.run ? 1.0 : 0.0)
                                     : (settings_.playMode == kPlaySync)
                                         ? (settings_.playing ? 1.0 : 0.0)
-                                        : 1.0;
+                                        : (settings_.playMode == kPlayGatedFree)
+                                            ? (settings_.run ? 1.0 : 0.0)
+                                            : 1.0;
 
         attackInc_  = settings_.attackMs  <= 0.0f ? 1.0 : 1.0 / (settings_.attackMs  * 0.001 * sr);
         releaseInc_ = settings_.releaseMs <= 0.0f ? 1.0 : 1.0 / (settings_.releaseMs * 0.001 * sr);
@@ -311,6 +377,35 @@ public:
                     sumL += v.outL * amp;
                     sumR += v.outR * amp;
                 }
+            }
+            else if (settings_.playMode == kPlayGatedFree)
+            {
+                Voice& v = voices_[0];
+                if (!freeVoiceActive_)
+                {
+                    v = Voice {};
+                    v.active = true;
+                    v.gate = false;
+                    v.note = settings_.rootNote;
+                    v.vel = 1.0;
+                    v.ampVel = 1.0;
+                    v.env = 0.0;
+                    v.t = 0;
+                    prime(v, 0);
+                    freeVoiceActive_ = true;
+                }
+
+                // The clock and formula state run freely; the note gate only
+                // controls the amplitude envelope.
+                advanceVoice(v, 0);
+                if (v.gate)
+                    v.env = std::min(1.0, v.env + attackInc_);
+                else
+                    v.env = std::max(0.0, v.env - releaseInc_);
+
+                const double amp = v.env * v.ampVel;
+                sumL += v.outL * amp;
+                sumR += v.outR * amp;
             }
             else
             {
@@ -410,6 +505,8 @@ private:
         double   prevR = 0.0, currR = 0.0;
         double   outL = 0.0, outR = 0.0;
         double   env = 0.0;
+        double   pressure = 0.0;
+        double   pressureTarget = 0.0;
         int      gateRemaining = 0;
         uint64_t age = 0;
     };
@@ -436,6 +533,8 @@ private:
 
     void advanceVoice(Voice& v, int index)
     {
+        v.pressure += (v.pressureTarget - v.pressure) * pressureCoeff_;
+
         const double effective = effectiveRate(v);
         const double ratio = effective / sampleRate_;
         v.phase += ratio;
@@ -503,7 +602,8 @@ private:
     double effectiveRate(const Voice& v) const
     {
         double rate = settings_.clockRate * settings_.speed;
-        if (settings_.playMode == kPlayTrigger && settings_.pitchTrack)
+        if ((settings_.playMode == kPlayTrigger || settings_.playMode == kPlayGatedFree)
+            && settings_.pitchTrack)
             rate *= std::pow(2.0, (v.note - settings_.rootNote) / 12.0);
         return rate;
     }
@@ -532,6 +632,7 @@ private:
         g[G_VEL]   = v.vel;
         g[G_GATE]  = v.gate ? 1.0 : 0.0;
         g[G_VOICE] = (double)index;
+        g[G_AT]    = v.pressure;
 
         for (int i = 0; i < kNumMacros; ++i)
             g[G_A + i] = macroSm_[i];
@@ -579,8 +680,106 @@ private:
         return x < 0.0 ? -y : y;
     }
 
+    static constexpr int kMaxHeldNotes = 32;
+
+    struct HeldNote
+    {
+        int    note = 60;
+        double velocity = 1.0;
+        double pressure = 0.0;
+    };
+
+    void gatedNoteOn(int note, int velocity)
+    {
+        if (settings_.program == nullptr && settings_.evaluator == nullptr)
+            return;
+
+        note = std::clamp(note, 0, 127);
+        const double vel = std::clamp(velocity / 127.0, 0.0, 1.0);
+
+        // Last-note priority; re-pressing a held note moves it to the top.
+        for (int i = 0; i < numHeld_; ++i)
+        {
+            if (held_[i].note == note)
+            {
+                for (int j = i; j + 1 < numHeld_; ++j)
+                    held_[j] = held_[j + 1];
+                --numHeld_;
+                break;
+            }
+        }
+        if (numHeld_ >= kMaxHeldNotes)
+        {
+            for (int i = 0; i + 1 < numHeld_; ++i)
+                held_[i] = held_[i + 1];
+            --numHeld_;
+        }
+
+        HeldNote& h = held_[numHeld_++];
+        h.note = note;
+        h.velocity = vel;
+        h.pressure = 0.0;
+
+        if (!freeVoiceActive_)
+        {
+            Voice& v = voices_[0];
+            v = Voice {};
+            v.active = true;
+            v.t = 0;
+            freeVoiceActive_ = true;
+        }
+
+        Voice& v = voices_[0];
+        v.active = true;
+        v.gate = true;
+        v.note = note;
+        v.vel = vel;
+        v.ampVel = 0.25 + 0.75 * vel;
+        v.pressureTarget = std::max(channelPressure_, h.pressure);
+        // t, phase and the formula state deliberately keep running.
+    }
+
+    void gatedNoteOff(int note)
+    {
+        int index = -1;
+        for (int i = 0; i < numHeld_; ++i)
+            if (held_[i].note == note)
+            {
+                index = i;
+                break;
+            }
+        if (index < 0) return;
+
+        const bool wasCurrent = (index == numHeld_ - 1);
+        for (int i = index; i + 1 < numHeld_; ++i)
+            held_[i] = held_[i + 1];
+        --numHeld_;
+
+        if (!wasCurrent) return;
+
+        Voice& v = voices_[0];
+        if (numHeld_ > 0)
+        {
+            const HeldNote& h = held_[numHeld_ - 1];
+            v.gate = true;
+            v.note = h.note;
+            v.vel = h.velocity;
+            v.ampVel = 0.25 + 0.75 * h.velocity;
+            v.pressureTarget = std::max(channelPressure_, h.pressure);
+        }
+        else
+        {
+            v.gate = false;
+            v.pressureTarget = 0.0;
+        }
+    }
+
     Settings settings_;
     double sampleRate_ = 44100.0;
+    double pressureCoeff_ = 0.01;
+    double channelPressure_ = 0.0;
+    HeldNote held_[kMaxHeldNotes] {};
+    int numHeld_ = 0;
 
     Voice voices_[kMaxVoices];
     uint64_t counter_ = 0;

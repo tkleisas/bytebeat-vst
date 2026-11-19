@@ -87,7 +87,7 @@ QuickJS-NG. **JS Mode** selects how the source is compiled:
   `const f = t => Math.sin(t/20)*100+128; return f;`
 
 The arguments are
-`t, a..h, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice`.
+`t, a..h, sr, time, beat, bar, tempo, playing, note, freq, vel, gate, voice, aftertouch`.
 `Math` aliases and `PI`/`TAU`/`E` are installed. Undeclared variables persist
 per voice/context. The result may be a number or `[left, right]`. Changing the
 engine or JS mode applies the current editor text. The source is smoke-tested
@@ -99,8 +99,10 @@ The native engine is the default. The MPC build never includes QuickJS.
 
 ## Play mode
 
-The default is **Trigger** (MIDI notes start the formula). Switch to **Free**
-for a continuous stream, or **Sync** to follow the host transport.
+The default is **Trigger** (MIDI notes start the formula at `t=0`). **Gated
+Free** runs one continuous clock and formula state; notes gate the output and
+apply note, pitch, velocity and aftertouch while held, without resetting `t`.
+**Free** is the un-gated drone mode, and **Sync** follows the host transport.
 
 ## Parameters
 
@@ -108,7 +110,7 @@ for a continuous stream, or **Sync** to follow the host transport.
 `Tone`, `Drive`, `DC Block`, `Width`, `Pan`, `Voices`, `Root`, `Pitch Track`,
 `Attack`, `Release`, `Reset`. All are automatable. The choice parameters use
 the engine's menu values; `Mode` = Bytebeat/Signed/Floatbeat, `Clock` =
-4 kHz…48 kHz, `Play Mode` = Free/Sync/Trigger.
+4 kHz…48 kHz, `Play Mode` = Free/Sync/Trigger/Gated Free.
 
 ## Licence
 
