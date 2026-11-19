@@ -1,0 +1,897 @@
+{
+  "kit": "amber",
+  "pages": [
+    {
+      "name": "P1-4 F",
+      "controls": [
+        {
+          "param": "P1 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P2 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P3 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P4 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P1 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P1 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P2 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P3 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P4 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P1 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P2 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P3 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P4 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        }
+      ]
+    },
+    {
+      "name": "P1-4 E",
+      "controls": [
+        {
+          "param": "P1 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P1 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P2 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P3 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P4 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P1 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P2 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P3 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P4 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P1 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 A",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "P1-4 M",
+      "controls": [
+        {
+          "param": "P1 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P1 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P1 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P2 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P3 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P4 D",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "P5-8 F",
+      "controls": [
+        {
+          "param": "P5 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P6 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P7 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P8 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P5 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P5 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P6 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P7 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P8 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P5 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P6 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P7 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P8 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        }
+      ]
+    },
+    {
+      "name": "P5-8 E",
+      "controls": [
+        {
+          "param": "P5 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P5 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P6 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P7 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P8 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P5 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P6 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P7 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P8 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P5 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 A",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "P5-8 M",
+      "controls": [
+        {
+          "param": "P5 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P5 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P5 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P6 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P7 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P8 D",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "P9-12 F",
+      "controls": [
+        {
+          "param": "P9 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P10 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P11 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P12 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P9 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P9 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P10 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P11 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P12 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P9 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P10 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P11 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P12 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        }
+      ]
+    },
+    {
+      "name": "P9-12 E",
+      "controls": [
+        {
+          "param": "P9 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P9 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P10 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P11 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P12 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P9 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P10 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P11 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P12 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P9 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 A",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "P9-12 M",
+      "controls": [
+        {
+          "param": "P9 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P9 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P9 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P10 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P11 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P12 D",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "P13-16 F",
+      "controls": [
+        {
+          "param": "P13 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P14 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P15 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P16 Formula",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P13 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 Level",
+          "widget": "knob"
+        },
+        {
+          "param": "P13 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P14 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P15 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P16 Pan",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P13 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P14 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P15 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "P16 Tune",
+          "widget": "knob",
+          "polarity": "bipolar"
+        }
+      ]
+    },
+    {
+      "name": "P13-16 E",
+      "controls": [
+        {
+          "param": "P13 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "P13 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P14 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P15 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P16 Choke",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "P13 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P14 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P15 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P16 Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "P13 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 A",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 A",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "P13-16 M",
+      "controls": [
+        {
+          "param": "P13 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 B",
+          "widget": "knob"
+        },
+        {
+          "param": "P13 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 C",
+          "widget": "knob"
+        },
+        {
+          "param": "P13 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P14 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P15 D",
+          "widget": "knob"
+        },
+        {
+          "param": "P16 D",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "MASTER",
+      "controls": [
+        {
+          "param": "Volume",
+          "widget": "fader"
+        },
+        {
+          "param": "Tone",
+          "widget": "knob"
+        },
+        {
+          "param": "Drive",
+          "widget": "knob"
+        },
+        {
+          "param": "Note Base",
+          "widget": "knob"
+        },
+        {
+          "param": "Status",
+          "widget": "knob"
+        },
+        {
+          "widget": "text",
+          "text": "BYTEBEAT DRUMS"
+        },
+        {
+          "widget": "text",
+          "text": "PADS: MIDI 36-51"
+        },
+        {
+          "widget": "text",
+          "text": "ONE-SHOT / HOLD"
+        },
+        {
+          "widget": "text",
+          "text": "CHOKE GROUPS 1-4"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    }
+  ]
+}

@@ -63,6 +63,7 @@ struct Settings
     float  attackMs      = 2.0f;
     float  releaseMs     = 80.0f;
     bool   resetOnNote   = true;
+    int    oneShotSamples = 0;   // >0: gate auto-releases after this many host samples
 
     float  macro[kNumMacros] = { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
 
@@ -184,6 +185,7 @@ public:
         chosen->gate = true;
         chosen->note = note;
         chosen->vel = vel;
+        chosen->gateRemaining = settings_.oneShotSamples;
         chosen->age = ++counter_;
 
         if (!wasActive)
@@ -227,6 +229,14 @@ public:
     int64_t primaryT() const
     {
         return voices_[0].t;
+    }
+
+    bool hasActiveVoices() const
+    {
+        for (const auto& v : voices_)
+            if (v.active)
+                return true;
+        return false;
     }
 
     int primaryNote() const
@@ -276,6 +286,12 @@ public:
                     if (!v.active) continue;
 
                     advanceVoice(v, i);
+
+                    if (v.gate && v.gateRemaining > 0)
+                    {
+                        if (--v.gateRemaining <= 0)
+                            v.gate = false;
+                    }
 
                     if (v.gate)
                     {
@@ -394,6 +410,7 @@ private:
         double   prevR = 0.0, currR = 0.0;
         double   outL = 0.0, outR = 0.0;
         double   env = 0.0;
+        int      gateRemaining = 0;
         uint64_t age = 0;
     };
 

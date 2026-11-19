@@ -1,6 +1,20 @@
 # Changelog
 
-## 0.2.0
+## Bytebeat Drums 0.1.0
+
+- New 16-pad bytebeat drum instrument for MPC OS 3.10.1+ and desktop VST2.
+- Per-pad formula from the built-in bank or user `.bb` files, level, pan,
+  ±24 semitone tune, decay, choke group, One-shot/Hold mode and macros A–D.
+- MIDI notes 36–51 by default, with a Note Base master parameter.
+- One-shot 2 ms gate plus decay envelope; Hold mode gates on note-off.
+- 5 ms choke fade, cross-pad choke groups, all-notes-off panic.
+- Six factory kits: Init, Bytebeat Kit, Metal Kit, Acid Kit, Ambient Kit,
+  Glitch Kit.
+- 13-tab MPC UI and 181 parameters; shared native bytebeat core.
+- Shared engine gained an optional one-shot gate (`oneShotSamples`) and
+  `hasActiveVoices()`.
+
+## Bytebeat Machine 0.2.0
 
 - Optional QuickJS-NG JavaScript engine in the VST3: Expression, Function and
   Script modes; persistent per-voice state; Math aliases; number or
@@ -13,7 +27,7 @@
 - QuickJS-NG MIT licence shipped with the VST3.
 - Version 0.2.0.
 
-## 0.1.0
+## Bytebeat Machine 0.1.0
 
 - Initial release.
 - Formula compiler and bytecode VM with JS-like arithmetic and bitwise

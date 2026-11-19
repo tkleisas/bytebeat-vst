@@ -1,6 +1,7 @@
-# Bytebeat Machine - third-party notices
+# Bytebeat - third-party notices
 
-Bytebeat Machine is licensed GPL-3.0-or-later. Copyright (C) 2026 bokontep.
+Bytebeat Machine and Bytebeat Drums are licensed GPL-3.0-or-later.
+Copyright (C) 2026 bokontep.
 
 The MPC build is made with the **inMusic MPC Plugin Builder SDK**, which is
 MIT-licensed. Its licence text is in `LICENSES/MPC-Plugin-SDK-MIT.txt` and is
@@ -25,8 +26,8 @@ affiliated with or endorsed by Steinberg, inMusic, or Akai Professional.
 The built-in formula bank is original work written for this project, except
 for the "Sierpinski" entry (`t&t>>8`), a widely known mathematical identity
 included as a demonstration. User formulas placed in `Content/Formulas/` remain
-the property of their authors.
+the property of their authors. Bytebeat Drums uses the same bank.
 
 The JavaScript engine uses QuickJS-NG, MIT-licensed by Fabrice Bellard,
-Charlie Gordon and Ben Noordhuis. It is used only by the VST3 build; the MPC
-plugin does not include it.
+Charlie Gordon and Ben Noordhuis. It is used only by the Bytebeat Machine VST3;
+neither the MPC plugins nor Bytebeat Drums include it.
